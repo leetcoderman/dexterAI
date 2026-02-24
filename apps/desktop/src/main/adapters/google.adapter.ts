@@ -1,0 +1,163 @@
+import { BaseProviderAdapter, IPCEmitter } from './base.adapter';
+import { TestRequest, ProviderError, VerifyResult, ProviderCredentials } from '@dexterai/registry-types';
+import { GoogleGenerativeAI, GenerationConfig } from '@google/generative-ai';
+
+export class GoogleAdapter extends BaseProviderAdapter {
+    providerId = 'google';
+
+    async verify(credentials: ProviderCredentials): Promise<VerifyResult> {
+        try {
+            const genAI = new GoogleGenerativeAI(credentials.apiKey);
+            // Verify by attempting to instantiate a model and listing an arbitrary endpoint, or simply running a tiny generation.
+            // Generative AI SDK doesn't have a pure "verify" endpoint, so we will do a tiny generation request.
+            // Using 3 flash preview as it is known to exist.
+            const model = genAI.getGenerativeModel({ model: 'gemini-3-flash-preview' });
+            await model.generateContent({
+                contents: [{ role: 'user', parts: [{ text: 'hi' }] }],
+                generationConfig: { maxOutputTokens: 1 }
+            });
+
+            return { success: true };
+        } catch (e: any) {
+            // Google API throws specific error codes for auth
+            if (e.message?.includes('API key not valid') || e.status === 403 || e.status === 401) {
+                return { success: false, error: { code: 'INVALID_KEY', message: 'Invalid or unauthorized Google API Key', isRetryable: false } };
+            }
+            return {
+                success: false,
+                error: {
+                    code: 'PROVIDER_ERROR',
+                    message: `Google API Error: ${e.message}`,
+                    isRetryable: this.isRetryable(e.status)
+                }
+            };
+        }
+    }
+
+    async execute(request: TestRequest, credentials: ProviderCredentials, emitter: IPCEmitter): Promise<void> {
+        const { modelId, params } = request;
+        const genAI = new GoogleGenerativeAI(credentials.apiKey);
+
+        const startTime = Date.now();
+        let firstTokenTime: number | null = null;
+        let promptTokens = 0;
+        let completionTokens = 0;
+
+        try {
+            const messages = params.messages || [];
+            let systemInstruction = params.systemPrompt || '';
+            const contents: any[] = [];
+
+            messages.forEach((m: any) => {
+                if (m.role === 'system') {
+                    systemInstruction = m.content;
+                } else {
+                    contents.push({
+                        role: m.role === 'assistant' ? 'model' : 'user',
+                        parts: [{ text: m.content }]
+                    });
+                }
+            });
+
+            // Fallback for single prompt if no messages provided
+            if (contents.length === 0 && params.prompt) {
+                contents.push({
+                    role: 'user',
+                    parts: [{ text: String(params.prompt) }]
+                });
+            }
+
+            const modelConfig: any = {
+                model: modelId
+            };
+
+            if (systemInstruction) {
+                modelConfig.systemInstruction = systemInstruction;
+            }
+
+            const model = genAI.getGenerativeModel(modelConfig);
+
+            const generationConfig: GenerationConfig = {
+                temperature: Number(params.temperature ?? 0.7),
+                maxOutputTokens: Number(params.maxTokens ?? 1024),
+                topP: Number(params.topP ?? 1),
+            };
+
+            // Thinking level config. According to Gemini 3.1 preview docs, it might be nested in generationConfig.
+            if (params.thinkingLevel && params.thinkingLevel !== 'none') {
+                (generationConfig as any).thinkingConfig = {
+                    thinkingBudgetTokens: params.maxTokens ? Math.floor(Number(params.maxTokens) * 0.5) : 1024 // arbitrary logic for now
+                };
+            }
+
+            if (params.jsonMode) {
+                generationConfig.responseMimeType = "application/json";
+            }
+
+            if (params.stopSequences && Array.isArray(params.stopSequences)) {
+                generationConfig.stopSequences = params.stopSequences;
+            }
+
+            // Execute Streaming
+            const resultStream = await this.withRetry(() =>
+                model.generateContentStream({
+                    contents,
+                    generationConfig
+                })
+            );
+
+            let accumulatedText = '';
+            let finishReason = 'stop';
+
+            for await (const chunk of resultStream.stream) {
+                if (!firstTokenTime) {
+                    firstTokenTime = Date.now();
+                }
+
+                const chunkText = chunk.text();
+                accumulatedText += chunkText;
+
+                emitter.emit('test:chunk', {
+                    requestId: request.requestId,
+                    text: chunkText
+                });
+
+                if (chunk.promptFeedback) {
+                    // We could log blockReason if it hit safety issues
+                }
+
+                if (chunk.candidates && chunk.candidates[0]?.finishReason) {
+                    finishReason = chunk.candidates[0].finishReason.toLowerCase();
+                }
+            }
+
+            const response = await resultStream.response;
+
+            if (response.usageMetadata) {
+                promptTokens = response.usageMetadata.promptTokenCount;
+                completionTokens = response.usageMetadata.candidatesTokenCount;
+            }
+
+            const endTime = Date.now();
+            const totalTime = endTime - startTime;
+            const ttft = firstTokenTime ? firstTokenTime - startTime : totalTime;
+
+            emitter.emit('test:done', {
+                requestId: request.requestId,
+                ttft,
+                totalTime,
+                promptTokens,
+                completionTokens,
+                finishReason
+            });
+
+        } catch (e: any) {
+            const providerError: ProviderError = {
+                requestId: request.requestId,
+                code: 'GOOGLE_ERROR',
+                message: e.message || 'An unknown error occurred with Google Gemini'
+            };
+            emitter.emit('test:error', providerError);
+        }
+    }
+}

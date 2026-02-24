@@ -1,0 +1,286 @@
+{
+    "registry_version": "1.0.0",
+    "providers": [
+        {
+            "provider_id": "nvidia_nim",
+            "display_name": "NVIDIA NIM",
+            "auth": {
+                "type": "bearer",
+                "header_name": "Authorization",
+                "key_prefix": "nvapi-"
+            },
+            "base_url": "https://integrate.api.nvidia.com/v1",
+            "sdk_wrapper": "openai",
+            "verify_endpoint": "/models",
+            "key_generation_url": "https://build.nvidia.com/settings/api-keys",
+            "docs_url": "https://docs.api.nvidia.com",
+            "pricing_url": "https://build.nvidia.com/pricing",
+            "status_url": "https://status.nvidia.com",
+            "rate_limit_rpm": 40,
+            "free_tier": true,
+            "free_tier_note": "Free via NVIDIA Developer Program. 40 RPM. No credit expiry."
+        }
+    ],
+    "models": [
+        {
+            "id": "gpt-4o",
+            "provider_id": "openai",
+            "category": "text_generation",
+            "name": "GPT-4o",
+            "description": "High-intelligence flagship model for complex, multi-step tasks",
+            "context_window": 128000,
+            "pricing": {
+                "input_per_1m_tokens": 5.0,
+                "output_per_1m_tokens": 15.0
+            },
+            "supported_features": [
+                "vision",
+                "json_mode",
+                "system_prompt"
+            ]
+        },
+        {
+            "id": "gpt-4o-mini",
+            "provider_id": "openai",
+            "category": "text_generation",
+            "name": "GPT-4o mini",
+            "description": "Affordable and intelligent small model for fast, lightweight tasks",
+            "context_window": 128000,
+            "pricing": {
+                "input_per_1m_tokens": 0.15,
+                "output_per_1m_tokens": 0.6
+            },
+            "supported_features": [
+                "vision",
+                "json_mode",
+                "system_prompt"
+            ]
+        },
+        {
+            "id": "claude-3-7-sonnet-20250219",
+            "provider_id": "anthropic",
+            "category": "text_generation",
+            "name": "Claude 3.7 Sonnet",
+            "description": "Most intelligent model, hybrid reasoning capabilities",
+            "context_window": 200000,
+            "pricing": {
+                "input_per_1m_tokens": 3.0,
+                "output_per_1m_tokens": 15.0
+            },
+            "supported_features": [
+                "vision",
+                "system_prompt"
+            ]
+        },
+        {
+            "id": "claude-3-5-haiku-20241022",
+            "provider_id": "anthropic",
+            "category": "text_generation",
+            "name": "Claude 3.5 Haiku",
+            "description": "Fastest model, optimized for speed and cost",
+            "context_window": 200000,
+            "pricing": {
+                "input_per_1m_tokens": 0.8,
+                "output_per_1m_tokens": 4.0
+            },
+            "supported_features": [
+                "system_prompt"
+            ]
+        },
+        {
+            "id": "nova-2",
+            "provider_id": "deepgram",
+            "category": "audio_transcription",
+            "name": "Nova 2",
+            "description": "Deepgram's highly accurate, general-purpose speech-to-text model",
+            "pricing": {
+                "per_minute": 0.0043
+            },
+            "supported_features": [
+                "diarization",
+                "smart_format",
+                "punctuation"
+            ]
+        },
+        {
+            "id": "nova-3",
+            "provider_id": "deepgram",
+            "category": "audio_transcription",
+            "name": "Nova 3",
+            "description": "Deepgram's latest high-performance speech-to-text model",
+            "pricing": {
+                "per_minute": 0.005
+            },
+            "supported_features": [
+                "diarization",
+                "smart_format",
+                "punctuation"
+            ]
+        },
+        {
+            "id": "whisper-cloud",
+            "provider_id": "deepgram",
+            "category": "audio_transcription",
+            "name": "Whisper Cloud",
+            "description": "Fully managed Whisper model, deployed by Deepgram",
+            "pricing": {
+                "per_minute": 0.0048
+            },
+            "supported_features": [
+                "diarization",
+                "smart_format",
+                "punctuation"
+            ]
+        },
+        {
+            "id": "gemini-3.1-pro-preview",
+            "provider_id": "google",
+            "category": "text_generation",
+            "name": "Gemini 3.1 Pro",
+            "description": "Google's most capable model with advanced reasoning and thinking levels",
+            "context_window": 1000000,
+            "pricing": {
+                "input_per_1m_tokens": 2.0,
+                "output_per_1m_tokens": 12.0
+            },
+            "supported_features": [
+                "vision",
+                "system_prompt",
+                "thinking_levels"
+            ]
+        },
+        {
+            "id": "gemini-3-pro-preview",
+            "provider_id": "google",
+            "category": "text_generation",
+            "name": "Gemini 3 Pro",
+            "description": "Best for complex tasks requiring broad world knowledge across modalities",
+            "context_window": 1000000,
+            "pricing": {
+                "input_per_1m_tokens": 2.0,
+                "output_per_1m_tokens": 12.0
+            },
+            "supported_features": [
+                "vision",
+                "system_prompt"
+            ]
+        },
+        {
+            "id": "gemini-3-flash-preview",
+            "provider_id": "google",
+            "category": "text_generation",
+            "name": "Gemini 3 Flash",
+            "description": "Pro-level intelligence at the speed and pricing of Flash",
+            "context_window": 1000000,
+            "pricing": {
+                "input_per_1m_tokens": 0.50,
+                "output_per_1m_tokens": 3.0
+            },
+            "supported_features": [
+                "vision",
+                "system_prompt"
+            ]
+        },
+        {
+            "id": "gemini-3-pro-image-preview",
+            "provider_id": "google",
+            "category": "image_generation",
+            "name": "Nano Banana Pro",
+            "description": "Highest quality image generation model yet",
+            "pricing": {
+                "per_image": 0.134
+            },
+            "supported_features": []
+        },
+        {
+            "id": "meta/llama-4-maverick-17b-128e-instruct",
+            "provider_id": "nvidia_nim",
+            "category": "text_generation",
+            "name": "Llama 4 Maverick 17B",
+            "description": "NVIDIA NIM: Fast reasoning model.",
+            "context_window": 128000
+        },
+        {
+            "id": "meta/llama-4-scout-17b-16e-instruct",
+            "provider_id": "nvidia_nim",
+            "category": "text_generation",
+            "name": "Llama 4 Scout 17B",
+            "description": "NVIDIA NIM: Efficient instruct model.",
+            "context_window": 16000
+        },
+        {
+            "id": "meta/llama-3.3-70b-instruct",
+            "provider_id": "nvidia_nim",
+            "category": "text_generation",
+            "name": "Llama 3.3 70B Instruct",
+            "description": "NVIDIA NIM: High quality open model.",
+            "context_window": 128000
+        },
+        {
+            "id": "nvidia/nemotron-3-nano-30b-a3b",
+            "provider_id": "nvidia_nim",
+            "category": "text_generation",
+            "name": "Nemotron 3 Nano 30B",
+            "description": "NVIDIA NIM: In-house small model.",
+            "context_window": 8000
+        },
+        {
+            "id": "qwen/qwen2.5-coder-32b-instruct",
+            "provider_id": "nvidia_nim",
+            "category": "code_generation",
+            "name": "Qwen 2.5 Coder 32B",
+            "description": "NVIDIA NIM: Top-tier open coding model.",
+            "context_window": 32000
+        },
+        {
+            "id": "qwen/qwen3.5-397b-a17b",
+            "provider_id": "nvidia_nim",
+            "category": "image_understanding",
+            "name": "Qwen 3.5 VLM 397B",
+            "description": "NVIDIA NIM: High capacity multimodal model.",
+            "context_window": 32000
+        },
+        {
+            "id": "nvidia/cosmos-reason2-8b",
+            "provider_id": "nvidia_nim",
+            "category": "image_understanding",
+            "name": "Cosmos Reason2 8B",
+            "description": "NVIDIA NIM: Multimodal reasoning.",
+            "context_window": 8000
+        },
+        {
+            "id": "moonshotai/kimi-k2.5",
+            "provider_id": "nvidia_nim",
+            "category": "image_understanding",
+            "name": "Kimi K2.5 Multimodal",
+            "description": "NVIDIA NIM: General purpose vision.",
+            "context_window": 64000
+        },
+        {
+            "id": "nvidia/parakeet-ctc-0.6b",
+            "provider_id": "nvidia_nim",
+            "category": "audio_transcription",
+            "name": "Parakeet CTC 0.6B",
+            "description": "NVIDIA NIM: Fast English ASR.",
+            "pricing": {
+                "per_minute": 0.0000
+            }
+        },
+        {
+            "id": "nvidia/nv-embedqa-e5-v5",
+            "provider_id": "nvidia_nim",
+            "category": "embeddings",
+            "name": "NV EmbedQA E5 v5",
+            "description": "NVIDIA NIM: High quality embeddings.",
+            "context_window": 512
+        },
+        {
+            "id": "nvidia/nv-rerankqa-mistral-4b-v3",
+            "provider_id": "nvidia_nim",
+            "category": "reranking",
+            "name": "NV RerankQA Mistral 4B v3",
+            "description": "NVIDIA NIM: Text reranker.",
+            "context_window": 8000
+        }
+    ]
+}

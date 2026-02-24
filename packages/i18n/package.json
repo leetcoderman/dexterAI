@@ -1,0 +1,16 @@
+{
+    "name": "@dexterai/i18n",
+    "version": "1.0.0",
+    "main": "dist/index.js",
+    "types": "dist/index.d.ts",
+    "scripts": {
+        "build": "tsc"
+    },
+    "dependencies": {
+        "i18next": "^23.0.0",
+        "react-i18next": "^13.0.0"
+    },
+    "devDependencies": {
+        "typescript": "^5.0.0"
+    }
+}

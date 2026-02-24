@@ -1,0 +1,26 @@
+{
+  "extends": "@electron-toolkit/tsconfig/tsconfig.node.json",
+  "include": [
+    "electron.vite.config.*",
+    "src/main/**/*",
+    "src/preload/**/*"
+  ],
+  "compilerOptions": {
+    "composite": true,
+    "types": [
+      "electron-vite/node"
+    ],
+    "baseUrl": ".",
+    "paths": {
+      "@dexterai/registry-types": [
+        "../../packages/registry-types/src/index.ts"
+      ],
+      "@dexterai/shared-utils": [
+        "../../packages/shared-utils/src/index.ts"
+      ],
+      "@dexterai/i18n": [
+        "../../packages/i18n/src/index.ts"
+      ]
+    }
+  }
+}

@@ -1,0 +1,148 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Discord-inspired dark palette */
+    --color-background: #0b0c0e;
+    --color-surface: #16171a;
+    --color-elevated: #1e1f23;
+    --color-overlay: #25262b;
+    --color-sidebar: #111214;
+    --color-sidebar-active: rgba(88, 101, 242, 0.12);
+
+    /* Accent — Discord Blurple */
+    --color-primary: #5865f2;
+    --color-primary-hover: #4752c4;
+    --color-accent: #7289da;
+    --color-success: #23a55a;
+    --color-warning: #f0b232;
+    --color-danger: #ed4245;
+
+    /* Text hierarchy */
+    --color-text: #f2f3f5;
+    --color-text-secondary: #b5bac1;
+    --color-text-muted: #6d6f78;
+
+    /* Borders */
+    --color-border: #2a2b30;
+    --color-border-subtle: #1f2024;
+
+    /* Inputs */
+    --color-input: #1e1f23;
+    --color-input-border: #2a2b30;
+  }
+
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+    margin: 0;
+  }
+
+  html, body, #root {
+    height: 100%;
+    width: 100%;
+    overflow: hidden;
+  }
+
+  body {
+    background: var(--color-background);
+    color: var(--color-text);
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    line-height: 1.5;
+    user-select: none;
+  }
+
+  /* Scrollbar — thin dark like Discord */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #2a2b30;
+    border-radius: 3px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #3a3b40;
+  }
+
+  /* Selection */
+  ::selection {
+    background: rgba(88, 101, 242, 0.3);
+    color: #f2f3f5;
+  }
+
+  /* Focus ring utility */
+  *:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+  }
+}
+
+@layer components {
+  /* Reusable card surface */
+  .card {
+    @apply bg-surface rounded-xl border border-border;
+  }
+  .card-elevated {
+    @apply bg-elevated rounded-xl border border-border-subtle;
+  }
+
+  /* Buttons */
+  .btn-primary {
+    @apply px-4 py-2 bg-primary text-white font-medium rounded-lg
+           hover:bg-primary-hover active:translate-y-px transition-all duration-150;
+  }
+  .btn-secondary {
+    @apply px-4 py-2 bg-elevated text-text-secondary font-medium rounded-lg border border-border
+           hover:bg-overlay hover:text-text active:translate-y-px transition-all duration-150;
+  }
+  .btn-danger {
+    @apply px-4 py-2 bg-[rgba(237,66,69,0.1)] text-danger font-medium rounded-lg border border-[rgba(237,66,69,0.2)]
+           hover:bg-[rgba(237,66,69,0.2)] active:translate-y-px transition-all duration-150;
+  }
+  .btn-ghost {
+    @apply px-3 py-1.5 text-text-muted rounded-lg
+           hover:bg-elevated hover:text-text-secondary transition-all duration-150;
+  }
+
+  /* Input fields */
+  .input {
+    @apply w-full bg-input-bg border border-input-border rounded-lg px-3 py-2 text-sm text-text
+           placeholder:text-text-muted focus:outline-none focus:border-primary focus:ring-1 focus:ring-[rgba(88,101,242,0.3)]
+           transition-colors duration-150;
+  }
+
+  /* Badge/pill */
+  .badge {
+    @apply inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium;
+  }
+  .badge-primary {
+    @apply badge bg-[rgba(88,101,242,0.15)] text-primary;
+  }
+  .badge-success {
+    @apply badge bg-[rgba(35,165,90,0.15)] text-success;
+  }
+  .badge-warning {
+    @apply badge bg-[rgba(240,178,50,0.15)] text-warning;
+  }
+  .badge-danger {
+    @apply badge bg-[rgba(237,66,69,0.15)] text-danger;
+  }
+
+  /* Drag region for Electron title bar */
+  .drag-region {
+    -webkit-app-region: drag;
+  }
+  .no-drag {
+    -webkit-app-region: no-drag;
+  }
+}

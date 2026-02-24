@@ -1,0 +1,26 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Antigravity Design Tokens — Discord-inspired dark palette */
+:root {
+  --color-background: #0b0c0e;
+  --color-surface: #16171a;
+  --color-elevated: #1e1f23;
+  --color-overlay: #25262b;
+  --color-sidebar: #111214;
+  --color-sidebar-active: rgba(88, 101, 242, 0.12);
+  --color-primary: #5865f2;
+  --color-primary-hover: #4752c4;
+  --color-accent: #7289da;
+  --color-success: #23a55a;
+  --color-warning: #f0b232;
+  --color-danger: #ed4245;
+  --color-text: #f2f3f5;
+  --color-text-secondary: #b5bac1;
+  --color-text-muted: #6d6f78;
+  --color-border: #2a2b30;
+  --color-border-subtle: #1f2024;
+  --color-input: #1e1f23;
+  --color-input-border: #2a2b30;
+}

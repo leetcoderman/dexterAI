@@ -1,0 +1,1695 @@
+ModelForge
+AI Model Explorer
+Product Requirements Document  ·  v2.0
+Including Complete Frontend & Backend Technical Specification
+February 2026  ·  Confidential
+
+Document Revision History
+Version
+Date
+Author
+Change Summary
+1.0
+Feb 2026
+Product
+Initial PRD — Steps 1–7, connection matrix, evaluation metrics, risk register
+2.0
+Feb 2026
+Product
+Added: Personas, Success Metrics, Registry Governance, Compare Mode specs, Onboarding flow, Accessibility scope, Code sandbox security resolution, Windows trade-off, Technical Engineering Spec (FE + BE)
+
+Executive Summary
+ModelForge is a macOS desktop application built with Electron that gives non-technical AI practitioners — primarily Product Managers — a structured, code-free environment to discover, connect, test, and evaluate AI models from any provider. The ecosystem of open-source and commercial AI models is expanding faster than any individual can track: NVIDIA NIM alone lists 100+ inference endpoints; Hugging Face hosts over 900,000 models. ModelForge collapses the cognitive overhead of this fragmentation into a single, opinionated interface: browse by use-case, enter an API key, press Test, and see exactly how the model performs.
+
+Core Problem Statement
+A PM with minimal engineering experience cannot efficiently test, compare, and evaluate the rapidly expanding catalogue of AI models from providers like NVIDIA NIM, Hugging Face, Replicate, Deepgram, Gemini, Anthropic, OpenAI, and others.
+
+Each provider has different authentication methods, input schemas, output formats, and SDK requirements — making structured comparison nearly impossible without significant engineering effort that most PMs cannot perform independently.
+
+User Personas & Jobs-to-be-Done
+ModelForge is designed for three overlapping user types. All share one trait: they are AI-curious practitioners, not AI engineers.
+
+Persona 1 — Alex, the AI-Adjacent PM
+
+Attribute
+Detail
+Role
+Senior Product Manager at a B2B SaaS company
+Technical level
+Comfortable with APIs conceptually; can read JSON; cannot write production code
+Primary goal
+Evaluate 3–4 AI models against the same task to recommend one to engineering leadership
+Frustration
+Spends 2–3 hours per model just getting auth working before any actual testing
+Success looks like
+Connects a new provider and runs a comparative test in under 5 minutes
+Key JTBD
+When I evaluate AI vendors, I want to compare them on a level playing field so I can make a defensible recommendation without needing an engineer beside me
+
+Persona 2 — Jordan, the Product Designer
+
+Attribute
+Detail
+Role
+UX Designer exploring AI-generated assets for prototyping
+Technical level
+Zero coding background; comfortable with Figma, Notion, Airtable
+Primary goal
+Try image generation models to find one with a consistent visual style for UI mocks
+Frustration
+Every model has a different playground UI; can't easily compare output quality side-by-side
+Success looks like
+Generates 10 variants across 3 models and exports them in a single session
+Key JTBD
+When I'm sourcing AI-generated assets, I want to compare model outputs visually so I can choose the right one without learning a new tool for each provider
+
+Persona 3 — Sam, the Startup Founder
+
+Attribute
+Detail
+Role
+Technical co-founder; can code but time is their constraint
+Technical level
+Comfortable with REST APIs; no appetite to write boilerplate test scripts
+Primary goal
+Benchmark latency and cost-per-call across 5 LLMs to decide what to use in production
+Frustration
+Token cost estimates from provider docs don't reflect real-world usage; wants empirical data
+Success looks like
+Runs 20 test calls, exports a CSV of token usage and cost, presents to investors
+Key JTBD
+When I'm choosing an AI provider for production, I want real latency and cost data so I can make a financially sound build decision
+
+Success Metrics — v1.0
+These metrics define what a successful v1.0 launch looks like. They will be measured via anonymous opt-in telemetry (explicitly disclosed to users on first launch with opt-out available).
+
+Metric
+Target
+Measurement Method
+Priority
+Time-to-First-Test
+A non-technical user connects a provider and runs their first successful test in ≤ 5 minutes from cold launch
+Instrumented funnel: app_open → key_saved → test_success timestamp delta
+P0
+Connection Success Rate
+≥ 85% of API key verification attempts succeed on the first try
+Event: verify_attempt vs verify_success ratio
+P0
+Weekly Active Users (WAU)
+500 WAU by end of Month 3 post-launch
+Anonymous session count via opt-in telemetry
+P1
+Test Runs per Session
+Average ≥ 4 test runs per active session
+Event count: test_run per session_id
+P1
+Compare Mode Adoption
+≥ 30% of sessions with 2+ connected models use Compare Mode
+Event: compare_mode_activated / eligible_sessions
+P1
+7-Day Retention
+≥ 40% of users who run their first test return within 7 days
+Cohort analysis on anonymous user_id
+P2
+App Crash Rate
+< 0.1% of sessions end in an unhandled crash
+Sentry error monitoring
+P0
+Prompt Template Saves
+≥ 25% of users save at least one prompt template within their first 3 sessions
+Event: template_saved
+P1
+
+Step 1 — Feasibility Assessment
+Why Electron + macOS for v1.0
+Electron on macOS is the correct architecture for the initial release. The key technical justifications are:
+	•	Secure key storage via macOS Keychain (keytar npm package). Keys never touch disk in plaintext — this is a hard requirement given the sensitivity of provider credentials.
+	•	All HTTP/REST calls to AI providers are made from the Electron main process (Node.js), meaning there are no CORS restrictions that would block browser-based implementations.
+	•	Native file system access: drag-and-drop of audio, image, video, and document files into the test interface is only reliably achievable in a native or Electron context.
+	•	The target user demographic (designers, PMs at tech companies) skews heavily toward macOS. This is validated by standard B2B SaaS data: macOS represents 60–70% of knowledge-worker devices at US tech companies.
+
+Framework Clarification: What is Antigravity?
+Definition — Antigravity
+Antigravity is an internal React-based UI component framework used for this project. It is not a public library.
+
+For all engineering purposes: Antigravity = React 18 + a custom design token system + a set of pre-built UI components (Button, Input, Modal, Toast, etc.) that enforce the ModelForge visual language.
+
+Engineers should treat Antigravity components as they would a customised shadcn/ui or Radix UI library. All components accept standard React props. The component catalogue is documented in /packages/antigravity/README.md in the monorepo.
+
+If Antigravity does not have a component you need, build it in /packages/antigravity/src/components and submit it for review. Do not reach for third-party UI libraries without team discussion.
+
+Platform Scope — macOS v1.0, Cross-Platform Later
+Trade-off Decision: macOS-Only for v1.0
+ModelForge v1.0 ships as macOS-only (Apple Silicon + Intel universal binary). This is a speed-to-ship decision, not a technical impossibility.
+
+Windows is technically viable: Electron supports Windows natively, and Windows has DPAPI (Data Protection API) for secure credential storage, which keytar supports. Linux has the Secret Service API (libsecret). The reasons for deferring cross-platform are:
+  1. Notarisation and code-signing pipelines differ per OS — building for all three triples the release engineering overhead for v1.0.
+  2. The primary user demographic (AI-adjacent PMs at US tech companies) is macOS-dominant.
+  3. macOS-only lets us dogfood the Antigravity component library on a single platform before adapting to Windows rendering quirks.
+
+Windows support is a firm P2 commitment, not a vague 'maybe later.' The engineering architecture must not make macOS-specific assumptions beyond the Keychain credential store. Use the keytar abstraction layer for all credential operations so the Windows DPAPI path requires only a config change, not a refactor.
+
+Connection Method Matrix — Auth is NOT Universal
+REST + Bearer token covers approximately 75% of providers. The remaining 25% require provider-specific configuration. Every model in the registry includes a structured connection_config object. Engineers must implement a ProviderAdapter pattern, not a single generic request function.
+
+Provider
+Auth Method
+Header/Param
+Extra Required Config
+OpenAI SDK Compatible?
+NVIDIA NIM
+Bearer Token
+Authorization: Bearer {key}
+model string in request body
+Yes — use openai npm package with custom baseURL
+OpenAI
+Bearer Token
+Authorization: Bearer {key}
+organization (optional)
+Yes — native
+Anthropic
+Custom Header
+x-api-key: {key}
+anthropic-version: 2023-06-01 required
+No — use @anthropic-ai/sdk
+Google Gemini (AI Studio)
+Query Parameter
+?key={key} in URL
+None
+No — use @google/generative-ai
+Google Vertex AI
+OAuth2 Bearer
+Authorization: Bearer {token}
+project_id, location, service account JSON
+No — use @google-cloud/aiplatform
+Deepgram (ASR)
+Bearer Token
+Authorization: Token {key}
+WebSocket for streaming transcription
+No — use @deepgram/sdk
+Replicate
+Bearer Token
+Authorization: Token {key}
+version hash per model (not model name)
+No — use replicate npm package
+Hugging Face Inference
+Bearer Token
+Authorization: Bearer {key}
+model_id embedded in URL path
+No — plain fetch
+Stability AI
+Bearer Token
+Authorization: Bearer {key}
+organization header optional
+No — plain fetch
+ElevenLabs (TTS)
+Custom Header
+xi-api-key: {key}
+voice_id per request (not model-level)
+No — plain fetch
+Cohere
+Bearer Token
+Authorization: Bearer {key}
+None
+No — use cohere-ai npm package
+Ollama (local)
+None
+N/A — localhost only
+Model must be pulled first via CLI
+Yes — custom baseURL, no auth
+AssemblyAI (ASR)
+Header Key
+authorization: {key}
+WebSocket for real-time
+No — use assemblyai npm package
+
+Each provider entry in the model registry JSON schema includes a connection_config block:
+
+{
+  "provider_id": "anthropic",
+  "display_name": "Anthropic",
+  "auth": {
+    "type": "header_key",          // "bearer" | "header_key" | "query_param" | "oauth2" | "none"
+    "header_name": "x-api-key",
+    "additional_headers": {
+      "anthropic-version": "2023-06-01"
+    }
+  },
+  "base_url": "https://api.anthropic.com/v1",
+  "sdk_wrapper": "@anthropic-ai/sdk",  // null if plain fetch
+  "verify_endpoint": "/models",         // Lightweight endpoint for key verification
+  "docs_url": "https://docs.anthropic.com",
+  "pricing_url": "https://www.anthropic.com/pricing",
+  "status_url": "https://status.anthropic.com"
+}
+
+Step 2 — AI Model Taxonomy by I/O Type
+The home screen organises every model into one of the following 13 use-case categories. Each category defines an I/O contract. The test workspace (Step 5) renders a different UI per category.
+
+Category
+Inputs
+Outputs
+Example Models
+NVIDIA NIM
+Text Generation / Chat
+Text prompt, system prompt, history, params
+Streamed text tokens
+GPT-4o, Claude 3.5 Sonnet, Llama 3.1 405B, Mistral Large, Gemma 2
+Yes
+Code Generation
+Prompt, language selector, code context
+Code blocks, diffs, explanations
+DeepSeek Coder V2, CodeLlama 70B, StarCoder2, Granite Code
+Yes
+Image Generation
+Text prompt, negative prompt, seed, dimensions
+Image PNG/JPEG/WebP
+SDXL Turbo, FLUX.1-dev, DALL-E 3, Ideogram v2, Stable Cascade
+Yes
+Image Understanding (VLM)
+Image + text question
+Text (streamed)
+LLaVA 1.6, Phi-3 Vision, GPT-4o Vision, Claude Vision, Gemini Pro V
+Yes
+Audio Transcription (ASR)
+Audio file or mic stream
+Transcript, timestamps, confidence
+Whisper Large v3, Deepgram Nova-2, Parakeet (NVIDIA), AssemblyAI Universal
+Yes
+Text-to-Speech (TTS)
+Text, voice ID, speed, pitch
+Audio file (MP3/WAV)
+ElevenLabs Turbo v2.5, Kokoro, Bark, MeloTTS
+No
+Embeddings / Semantic Search
+Text string or batch
+Float vector (1536–4096 dims)
+text-embedding-3-large, NV-EmbedQA, nomic-embed-text
+Yes
+Reranking
+Query + candidate passages
+Ranked list + relevance scores
+Cohere Rerank 3, NV-RerankQA-Mistral
+Yes
+Document Understanding
+PDF or image + question
+Structured text, table extraction
+Nougat, Gemini Flash (doc), Claude (PDF native)
+Partial
+Object Detection / CV
+Image or video frame
+Bounding boxes, labels, confidence
+YOLOv10, Grounding DINO, SAM 2 (Meta)
+Yes
+Video Generation
+Text prompt or ref image + duration
+MP4 video
+CogVideoX-5B, Kling 1.5, Runway Gen-3 Alpha
+Yes (emerging)
+Music / Audio Generation
+Text prompt or melody input
+WAV/MP3 audio
+MusicGen Large, AudioCraft, Stable Audio 2.0
+No
+3D Generation
+Text prompt or image
+.obj/.glb mesh, point cloud
+TripoSR, Zero123++, Shap-E
+No (emerging)
+
+Registry Governance
+The model registry is the operational backbone of ModelForge. The app is only as useful as the registry is current and accurate. This section defines ownership, schema, update cadence, and stale-data handling.
+
+Registry Schema
+The registry is a single versioned JSON file published to a CDN (Cloudflare R2). A bundled fallback copy ships with each app build. Schema:
+
+{
+  "registry_version": "2026.02.1",     // CalVer: YYYY.MM.patch
+  "generated_at": "2026-02-23T00:00:00Z",
+  "models": [
+    {
+      "id": "llama-3-1-405b-instruct",
+      "display_name": "Llama 3.1 405B Instruct",
+      "provider_id": "nvidia_nim",
+      "category": "text_generation",
+      "model_string": "meta/llama-3.1-405b-instruct",
+      "release_date": "2024-07-23",
+      "param_count_b": 405,
+      "context_window": 128000,
+      "licence": "llama3.1",             // "open" | "commercial" | named licence
+      "licence_type": "open",
+      "local_available": true,
+      "local_download_url": "https://ollama.com/library/llama3.1",
+      "huggingface_id": "meta-llama/Meta-Llama-3.1-405B-Instruct",
+      "pricing": {
+        "input_per_1m_tokens": 5.00,
+        "output_per_1m_tokens": 15.00,
+        "currency": "USD",
+        "pricing_updated": "2026-01-15",  // Date pricing was last verified
+        "pricing_url": "https://..."
+      },
+      "connection_config": { /* ProviderAdapter config as shown above */ },
+      "tags": ["instruct", "multilingual", "long-context"],
+      "deprecated": false
+    }
+  ]
+}
+
+Ownership & Update Cadence
+Activity
+Owner
+Cadence
+Process
+New model additions
+PM + Registry Bot
+Weekly (automated) + ad-hoc
+GitHub PR to registry repo; bot auto-checks NVIDIA NIM, HuggingFace trending weekly
+Pricing verification
+PM
+Monthly
+Manual check against provider pricing pages; update pricing_updated field
+Provider API schema changes
+Engineering
+On provider changelog alert
+Provider status feeds monitored; adapter updated + registry version bumped
+Model deprecation
+PM
+As announced by provider
+Set deprecated:true; app shows warning banner for deprecated models
+App bundle update
+Engineering
+Per app release
+Registry JSON bundled in app build as fallback
+
+Stale Data Handling
+	•	On every app launch (if internet available), the app fetches the registry CDN URL with a max-age=3600 cache header. If the remote version is newer than the bundled version, the new registry is downloaded and cached locally.
+	•	If the fetch fails (offline, CDN down), the app falls back to the cached local registry and shows a subtle 'Registry last updated X days ago' indicator in the footer.
+	•	If pricing data is older than 30 days, the cost estimate in the evaluation panel shows an amber '~ estimated' badge with a link to the provider pricing page rather than a confident number.
+	•	If a model's pricing_updated date is more than 90 days old, the cost estimate column is hidden entirely and replaced with a 'Pricing unverified — check provider' link.
+
+Step 3 — User Flow & Onboarding
+First-Run / Onboarding Flow (New Requirement)
+The first-launch experience for a user with zero connected providers must be explicitly guided. A blank home screen showing 13 tiles all reading '0 connected models' is confusing and demotivating for a non-technical user.
+
+Onboarding Flow — 4 Steps
+Step 1 — Welcome screen: App name, one-sentence value prop, 'Get started' CTA. Skip option for returning users (cookie-persisted).
+
+Step 2 — Choose a use case: User picks their first category (image gen, chat, transcription, etc.). This anchors the experience to something they care about.
+
+Step 3 — Connect your first provider: Filtered view of providers for that category, sorted by 'easiest to get a free API key.' Each provider card links directly to their key generation page. API key input form + Verify button.
+
+Step 4 — Run your first test: After successful verification, the app auto-navigates to the test workspace pre-loaded with a starter prompt appropriate to the category. A tooltip overlay highlights the key controls.
+
+	•	'New badge' threshold: Changed from arbitrary '14 days' to 'since the user's last app launch' — more meaningful and personalised.
+	•	Returning users with no connections land on the Home screen with an ambient nudge: 'Connect your first model to start testing' in the hero area. No forced modal.
+
+Screen 1: Home — Use-Case Gallery
+	•	Responsive grid of 13 category tiles. Each tile: category icon, name, connected model count badge, 'New' indicator if models added since last launch.
+	•	Global search bar searches across model names, providers, and tags.
+	•	'Connected only' filter chip shows categories with at least one verified connection.
+	•	Network-fetched registry update notification bar appears at top if a newer registry version is available.
+
+Screen 2: Model Catalogue
+	•	Models listed for the selected category, sorted by release date (newest first) by default.
+	•	Each row: model name, provider logo, release date, parameter count, licence type, connection status badge.
+	•	Sort: Release Date, Provider, Popularity (via Hugging Face likes API, fetched on load, cached 24h with a single authenticated HF token bundled in app), Licence.
+	•	Filter chips: Provider, Licence (open/commercial), Local-available.
+	•	Note on HF popularity fetch: the app uses a single read-only HF API token bundled at build time (not user-provided) to call the /api/models?sort=likes endpoint. This token has no write access and is rate-limited to 1,000 requests/hour — the app caches results per session to stay well within limits.
+
+Screen 3: API Key Setup & Connection Verification
+State A — Not Connected
+	•	Provider info card: logo, docs link, pricing link, status page link, free tier indicator.
+	•	API key input (password-masked field, with Show toggle).
+	•	Conditional additional fields appear based on provider connection_config: org_id for OpenAI, project_id for Vertex AI, etc. Fields are labelled clearly with inline help text.
+	•	'Verify Connection' button: triggers a minimal, low-cost test call (e.g., GET /models or a 1-token completion). Spinner + 'Verifying...' state during check.
+	•	On success: key encrypted and stored in macOS Keychain via keytar. Connection timestamp logged to local SQLite.
+	•	One-click delete: 'Disconnect' button with a single confirmation modal. Removes from Keychain and resets status.
+
+Connection Error Handling Matrix
+Scenario
+HTTP / Signal
+User Message
+Action Offered
+Invalid API key
+401
+Your API key was rejected. Check for typos or expiry.
+Link to provider key management page
+Wrong tier / model access
+403
+Your plan may not include this model. Upgrade required.
+Link to provider upgrade page
+Rate limit during verify
+429
+Rate limit hit. Retry in {retry-after}s.
+Auto-retry countdown + manual retry button
+Region restriction
+404
+This model is not available in your region.
+Link to docs listing available regions
+Network unreachable
+Timeout / ECONNREFUSED
+Cannot reach the provider. Check your internet connection.
+Retry button
+Malformed response
+200 + invalid JSON
+Connected but the response was unexpected. Confirm model name.
+Show raw response toggle for debugging
+Provider maintenance
+503
+Provider is temporarily unavailable.
+Link to provider status page
+Key revoked after saving
+Any error on subsequent test
+Your saved key may have expired. Re-verify.
+Re-verify prompt inline on test screen
+Extra config missing
+400 / field-level error
+This provider requires additional configuration (e.g., Org ID).
+Highlight the missing field
+
+State B — Already Connected
+	•	Shows: provider name, connection timestamp, last test date, cumulative token count (if tracked).
+	•	'Re-verify' button runs the same lightweight check.
+	•	'Disconnect' button (destructive, red outline).
+	•	'Open Test Environment' — primary CTA, navigates to Screen 4.
+
+Step 4 — Test Environment Interface
+Layout
+	•	Left sidebar: connected models grouped by category (collapsible). Shows model name and provider logo. Click to switch active model.
+	•	Main panel: category-specific test workspace for the selected model.
+	•	Top tab bar per model: Test | History | Evaluation.
+	•	Top-right: Compare Mode toggle (available when 2+ models are connected in the same category).
+
+Prompt Template Library — Reclassified to P0
+Priority Change
+The prompt template library was P2 in v1.0. It is reclassified to P0 for v2.0.
+
+Rationale: The primary persona (Alex the PM) will repeatedly run the same evaluation prompt across multiple models in the same session. Without a save mechanism, they must retype the same prompt 5–10 times. This is the single highest-friction point in the core test loop.
+
+MVP implementation: A 'Save as Template' button in every prompt input field. Templates are named, stored locally in SQLite, and shown in a dropdown above the prompt field. One-click load. One-click delete. Templates are scoped to a category (a text gen template is not shown in the image gen workspace).
+
+Step 5 — Interactive Test Workspaces by Category
+5.1 Text Generation / Chat
+	•	Inputs: Prompt editor (resizable, multi-line), system prompt field (collapsible), conversation history (chat bubble thread), temperature slider (0.0–2.0, step 0.1), max tokens input, top-p slider, stop sequences input.
+	•	Output: Streamed token display with live token counter. Regenerate button. Copy button.
+	•	Advanced (collapsed by default): seed, frequency penalty, presence penalty, JSON mode toggle, response_format selector (text / json_object), tool definitions (Monaco JSON editor).
+
+5.2 Code Generation
+	•	Inputs: Language selector, task description textarea, optional code context pane (Monaco editor, syntax highlighted), test input/output pair fields.
+	•	Output: Monaco editor (read-only) with syntax highlighting. Copy button. Diff toggle shows changes vs. input context code.
+Code Execution — Security Decision
+v1.0 PRD proposed a 'Run in sandbox' button using a Node.js sandboxed VM. This is DEFERRED to P3.
+
+Reason: No Node-based sandbox (vm2, isolated-vm) is appropriate for executing arbitrary LLM-generated code in a production desktop app without a formal security review. vm2 has active CVEs. isolated-vm is safer but requires native compilation which complicates the Electron build.
+
+P3 approach (when implemented): Code execution will use WebAssembly-based sandboxing (Pyodide for Python, QuickJS for JS) which runs in a separate renderer process with context isolation and no Node.js API access. This will go through a security review before shipping.
+
+v1.0 replacement: A 'Copy to clipboard' button with a tooltip 'Paste this into your IDE or a Jupyter notebook to run.' This is honest about the current capability and sets correct expectations.
+
+5.3 Image Generation
+	•	Inputs: Prompt textarea, negative prompt textarea, seed (number input + Random button), width/height sliders (constrained to model-supported aspect ratios from registry), steps slider, guidance scale slider, style preset dropdown (if model supports it).
+	•	Output: Generated image (full-width display), download button (PNG/JPEG/WebP), metadata overlay (seed used, final dimensions), generation history filmstrip (last 5 results, clickable to restore params).
+
+5.4 Image Understanding / VLM
+	•	Inputs: Image drop zone (JPG/PNG/WebP/GIF, max 20MB), text question field, detail level toggle (low/high where supported).
+	•	Output: Streamed text response. If model returns bounding box coordinates (YOLO format or COCO JSON), the app renders them as an SVG overlay on the displayed image.
+
+5.5 Audio Transcription (ASR)
+	•	Inputs: File picker (WAV/MP3/M4A/FLAC/OGG/OPUS) or live microphone record button with waveform visualiser (Web Audio API). Language selector. Model-specific toggles: diarization, punctuation, timestamps, smart_format.
+	•	Output: Transcript text. If timestamps returned, words are clickable and seek the audio player to that position. Speaker labels displayed if diarization enabled. Export: SRT / VTT / plain TXT.
+
+5.6 Text-to-Speech (TTS)
+	•	Inputs: Textarea (shows character count vs. model limit). Voice selector (dropdown with preview play button per voice). Speed slider. Pitch slider (if supported). Emotion/style selector (if supported by model).
+	•	Output: Inline audio player with waveform. Download button (MP3/WAV). Playback speed control (0.5x–2x).
+
+5.7 Embeddings / Semantic Search
+	•	Inputs: Single text input, or batch mode (CSV upload or line-separated textarea). Encoding format selector (float/base64/int8 where supported).
+	•	Output: Vector preview (first 10 dimensions, 'Show full vector' toggle). Dimension count. Cosine similarity calculator: paste a second string to compute similarity inline. Heatmap row visualisation.
+
+5.8 Reranking
+	•	Inputs: Query string. Candidate passages (add/remove textarea rows, or CSV import). Top-N selector.
+	•	Output: Ranked table with original rank, new rank, relevance score. Score delta column (green/red).
+
+5.9 Object Detection / CV
+	•	Inputs: Image drop zone. Confidence threshold slider (0.0–1.0). NMS threshold slider (if exposed by model).
+	•	Output: Canvas with bounding box overlays (colour-coded by class). Detection results table (class, confidence, x1/y1/x2/y2). Export as JSON (COCO format) or CSV.
+
+5.10 Video Generation
+	•	Inputs: Text prompt. Optional reference image. Duration selector. Aspect ratio selector. Motion intensity slider (if supported). Seed input.
+	•	Output: Async job with polling. Progress bar + estimated time. Desktop notification on completion (using Electron's Notification API). In-app video player. Download button (MP4). Thumbnail grid of last 3 generations.
+
+5.11 Music / Audio Generation
+	•	Inputs: Text prompt describing style/mood/instrumentation. Duration selector (5s–60s). Seed. Optional melody conditioning input (audio file upload, if supported by model).
+	•	Output: Inline audio player with waveform. Download as WAV/MP3. Metadata overlay (BPM, key if returned).
+
+5.12 3D Generation
+	•	Inputs: Text prompt or reference image upload. Quality preset (fast/balanced/high).
+	•	Output: A 3D viewer (Three.js in a renderer iframe, context-isolated). Orbit controls for rotation. Download as .obj or .glb. Polygon count display.
+
+Compare Mode — Per-Category Interaction Spec
+Compare Mode splits the main panel into two equal columns, each running the same category workspace for a different model. Inputs are mirrored by default (changing prompt in left panel updates right panel in real time). Users can break the link by clicking the chain icon.
+
+Category
+Left Panel
+Right Panel
+Differentiator Display
+Text / Code / Chat
+Streamed text output A
+Streamed text output B
+Side-by-side diff highlight on completion; token count delta badge
+Image Generation
+Generated image A
+Generated image B
+Toggle between side-by-side and overlay (opacity slider)
+ASR
+Transcript A with audio player A
+Transcript B with audio player B
+Diff highlighted words; WER delta if reference provided
+TTS
+Audio player A + waveform
+Audio player B + waveform
+Duration delta, file size delta, play both simultaneously button
+Embeddings
+Vector heatmap A
+Vector heatmap B
+Cosine similarity between the two model embeddings auto-computed
+Object Detection
+Annotated image A
+Annotated image B
+Detection count delta; class overlap summary
+Video Generation
+Video player A (async)
+Video player B (async)
+Both polls run independently; completion notifications labelled 'Model A ready' / 'Model B ready'
+3D Generation
+3D viewer A
+3D viewer B
+Polygon count delta; render time delta
+
+Step 6 — Model Evaluation Parameters
+Evaluation metrics are shown in a collapsible panel at the bottom of the test workspace after each call. They are also saved to SQLite and accessible in the History tab.
+
+6.1 Universal Metrics — All Models
+Metric
+Description
+How Captured
+Display
+TTFT (Time to First Token/Byte)
+ms from request sent to first response byte
+performance.now() delta on ReadableStream first chunk
+ms, colour: green <500, amber <2000, red >2000
+Total Response Time
+ms from request sent to last byte
+performance.now() delta on stream end / response complete
+ms
+HTTP Status
+Provider response code
+Axios / fetch response.status
+Badge: 200 green, 4xx red, 5xx orange
+Request Size
+Serialised request body in bytes
+Buffer.byteLength(JSON.stringify(payload))
+KB
+Response Size
+Raw response body size
+Content-Length header or measured
+KB
+Model ID (exact)
+Model string sent to the API
+Echoed from request payload
+Monospaced
+Provider
+Which provider adapter was used
+Registry metadata
+Logo + name
+Timestamp
+UTC time of test run
+new Date().toISOString()
+ISO 8601 + local time
+App Version
+ModelForge version at time of test
+app.getVersion()
+For reproducibility
+
+6.2 Language Model Metrics (Text / Code / Chat / Document)
+Metric
+Source
+Notes
+Prompt Tokens
+usage.prompt_tokens in response
+Falls back to tiktoken client-side estimate if not returned
+Completion Tokens
+usage.completion_tokens
+—
+Total Tokens
+usage.total_tokens or computed
+—
+Tokens/Second (throughput)
+Computed: completion_tokens / (total_ms / 1000)
+—
+Estimated Cost
+Computed: (prompt_tokens/1M × input_price) + (completion_tokens/1M × output_price)
+Shows amber '~estimated' badge if pricing data >30 days old
+Context Window Used %
+Computed: total_tokens / model.context_window × 100
+Red badge if >90%
+Finish Reason
+finish_reason in response
+stop / length / content_filter / tool_calls
+Cache Hit (if supported)
+usage.cache_read_input_tokens (Anthropic), cached_tokens (OpenAI)
+Shows 'Cache hit' badge; subtracts cached tokens from cost estimate
+
+6.3 Image Generation Metrics
+Metric
+Description
+Generation Latency
+Total ms from request to image bytes received
+Seed Used
+Actual seed applied (may differ from input if model randomises)
+Image Dimensions
+Width × Height in pixels (actual output)
+File Size
+KB of returned image
+Steps Executed
+Diffusion steps run, if returned by API
+Safety Filter Triggered
+Boolean — if provider's NSFW filter blocked or modified the output
+
+6.4 ASR Metrics
+Metric
+Description
+Audio Duration
+Length of input audio processed (seconds)
+Real-Time Factor (RTF)
+Processing time ÷ audio duration. RTF <1 = faster than real-time
+Word Error Rate (WER) — manual
+User enters reference transcript; app computes WER client-side
+Speaker Count
+Distinct speakers detected (if diarization enabled)
+Average Word Confidence
+Mean confidence score (0–1) across all words, if returned
+Language Detected
+ISO 639-1 code of auto-detected language
+
+6.5 TTS Metrics
+Metric
+Description
+Output Duration
+Length of generated audio (seconds)
+Characters/Second
+Input character count ÷ generation latency
+Output File Size
+KB of returned audio
+Sample Rate
+Hz of output audio (quality indicator)
+Voice ID Used
+Exact voice identifier sent in request
+
+6.6 CV / Object Detection Metrics
+Metric
+Description
+Objects Detected
+Count of bounding boxes returned
+Unique Classes
+Distinct class labels present
+Average Confidence
+Mean confidence score across all detections
+Inference Latency
+ms from image submitted to response received
+Input Resolution
+Width × Height of submitted image
+
+6.7 Embeddings Metrics
+Metric
+Description
+Dimensions
+Length of the returned float vector
+Input Tokens
+Tokens in the embedded input (if returned)
+Throughput (strings/sec)
+For batch mode: strings processed per second
+Cosine Similarity
+Computed between this embedding and a reference (user-provided)
+
+6.8 Evaluation History
+	•	Every test run persisted to SQLite with all applicable metrics.
+	•	History tab: sortable table of past runs with TTFT, cost, tokens, finish reason.
+	•	Compare two historical runs: delta indicators on all numeric fields (amber for regression, green for improvement).
+	•	Export: CSV or JSON of full history for a selected model, or all models in a category.
+	•	'Personal best' card per model: fastest TTFT, lowest cost/1k tokens, highest throughput.
+
+Step 7 — Later Scope: Local Models & Registry Updates
+	•	Local model download: each model card shows a 'Download Locally' link for GGUF/ONNX/Ollama models where available, pointing to the canonical download source (Hugging Face Hub, Ollama registry, NGC).
+	•	Bundled Ollama sidecar: the app will manage an Ollama process in the Electron main process via child_process. Model pull, status, and unload surfaced in a 'Local Models' section in the sidebar.
+	•	Registry version notifications: remote version vs. bundled version compared on launch. Notification badge when newer registry available. Changelog entry shown in notification.
+	•	My Downloads section: locally installed models with disk usage, version, and one-click update button.
+
+Accessibility & Internationalisation
+Accessibility Scope — v1.0
+Accessibility Commitment for v1.0
+ModelForge v1.0 targets WCAG 2.1 Level AA compliance. This is not optional — it is a launch requirement.
+
+Rationale: Retrofitting accessibility is expensive and signals low product quality. Starting accessible is cheaper than fixing it later, especially in an Electron context where native accessibility APIs must be explicitly wired.
+
+Requirement
+Standard
+Implementation Note
+Keyboard navigation
+WCAG 2.1 AA 2.1.1
+All interactive elements reachable and operable via keyboard. Tab order follows visual reading order. Antigravity components must define tabIndex correctly.
+Focus indicators
+WCAG 2.1 AA 2.4.7
+Visible focus ring on all interactive elements. Do not suppress outline without a replacement. Use Antigravity's focus-ring token.
+Colour contrast
+WCAG 2.1 AA 1.4.3
+Minimum 4.5:1 for normal text, 3:1 for large text. All palette combinations must pass — run Stark or Colour Contrast Analyser on every new component.
+Screen reader support
+WCAG 2.1 AA 4.1.2
+macOS VoiceOver must be able to announce all UI states. Use ARIA labels on icon-only buttons, dynamic regions (aria-live for streamed output), and loading states.
+Error identification
+WCAG 2.1 AA 3.3.1
+Form errors (API key field, config fields) identified in text, not colour alone.
+Resizable text
+WCAG 2.1 AA 1.4.4
+UI must not break or clip when macOS Accessibility font size is increased to 200%.
+
+Internationalisation — v1.0 Scope
+v1.0 ships in English only. However, the codebase must be built i18n-ready from day one to avoid a costly retrofit for v2.0.
+	•	All user-visible strings must be externalised into /packages/i18n/en.json. No hardcoded strings in component files.
+	•	Use the react-i18next library. Every string reference uses the t('key') hook pattern.
+	•	Date formatting uses Intl.DateTimeFormat (system locale). No hardcoded date format strings.
+	•	Number formatting (token counts, costs) uses Intl.NumberFormat. Currency respects locale.
+	•	Text direction: all layout uses logical CSS properties (margin-inline-start not margin-left) to allow RTL layout in a future localisation.
+
+Constraints & Risk Register — Updated
+Risk
+Severity
+Mitigation
+API key exposure / plaintext storage
+Critical
+macOS Keychain via keytar exclusively. No key ever written to disk or logged. Electron contextBridge enforces IPC boundary — renderer never touches keytar directly.
+Code execution sandbox (CVE surface)
+High
+Deferred to P3. v1.0 offers copy-to-clipboard only. P3 uses Pyodide/QuickJS in isolated renderer — formal security review required before shipping.
+Registry staleness (model/pricing)
+High
+Registry governance process defined above. Pricing >30 days shows amber warning. Pricing >90 days hides cost estimate. Provider API schema changes trigger adapter version bump.
+Provider API breaking changes
+Medium
+ProviderAdapter pattern abstracts all calls. Versioned adapter config in registry. Automated smoke tests (GitHub Actions) call verify_endpoint for top 10 providers nightly.
+Rate limits during testing
+Medium
+Display x-ratelimit-remaining in evaluation panel. Exponential backoff on 429. Warn user if <10% quota remaining before a test call.
+HF popularity API rate limits
+Low-Medium
+Single read-only token bundled at build time. Results cached per session (not per call). Degrades gracefully: sort by popularity becomes unavailable if token exhausted.
+macOS notarisation pipeline
+Low
+Apple Developer cert + Electron Builder + Apple notary service in GitHub Actions CI. Test notarisation in staging before every release.
+Electron app bundle size
+Low
+Lazy-load Monaco editor, Three.js, Web Audio API components. Target <180MB installer. Analyse bundle with @electron/asar-integrity on every build.
+Windows/Linux compatibility debt
+Low (now)
+Architecture must use keytar abstraction only (no raw Keychain calls). No macOS-specific APIs except Keychain. Windows support is P2.
+
+Prioritised Backlog — Updated v2.0
+P0 — MVP (v1.0) — Must Ship
+	•	Electron + Antigravity (React 18) shell bootstraps on macOS Universal (Apple Silicon + Intel).
+	•	Model registry JSON (v1 schema) bundled; 100+ models across 13 categories.
+	•	Registry auto-fetch on launch with local cache fallback.
+	•	Home screen use-case gallery with 13 category tiles and connected model count badges.
+	•	First-run onboarding flow: 4-step guided setup for zero-connection users.
+	•	Model catalogue screen with sort (release date, provider, popularity, licence) and filter chips.
+	•	API key setup screen with conditional extra fields per provider (keytar Keychain storage).
+	•	ProviderAdapter pattern for all 13 providers in the connection matrix.
+	•	Connection verification with 9-scenario error handling matrix.
+	•	One-click disconnect with confirmation modal.
+	•	Test workspace: text/chat category with full params, streamed output, live token counter.
+	•	Test workspace: code generation with Monaco editor, diff view (no code execution).
+	•	Test workspace: image generation with full param controls and history filmstrip.
+	•	Test workspace: ASR with file picker, mic recording, timestamp transcript, SRT/VTT export.
+	•	Prompt template library: save, load, delete templates per category (SQLite-backed).
+	•	Universal evaluation metrics panel for all test categories.
+	•	LLM-specific token and cost metrics (with pricing staleness warnings).
+	•	Test run history saved to SQLite; History tab per model.
+	•	WCAG 2.1 AA compliance for all P0 screens.
+	•	i18n-ready codebase (all strings in en.json, react-i18next).
+	•	Anonymous opt-in telemetry with explicit disclosure on first launch.
+	•	Crash reporting via Sentry (opt-in).
+
+P1 — v1.1
+	•	Test workspace: VLM / Image Understanding with bounding box overlay.
+	•	Test workspace: TTS with voice selector and inline audio player.
+	•	Test workspace: Embeddings with cosine similarity calculator and heatmap.
+	•	Test workspace: Object Detection / CV with canvas bounding box rendering.
+	•	Compare Mode for all 8 category types per the interaction spec above.
+	•	Evaluation history export as CSV and JSON.
+	•	Model catalogue: 'New since last launch' badge.
+	•	Evaluation panel: cache hit detection for Anthropic and OpenAI.
+
+P2 — v1.2
+	•	Test workspace: Reranking with ranked table and score delta.
+	•	Test workspace: Document Understanding (PDF input).
+	•	Test workspace: Music/Audio Generation.
+	•	Windows support: DPAPI credential storage, Windows code-signing pipeline.
+	•	Per-model personal best stats card.
+	•	WER computation for ASR (client-side, reference transcript input).
+	•	Evaluation history: compare two historical runs side-by-side.
+
+P3 — Future
+	•	Test workspace: Video Generation (async polling, desktop notification).
+	•	Test workspace: 3D Generation (Three.js viewer, .obj/.glb download).
+	•	Local model download links + Ollama sidecar integration.
+	•	Code execution sandbox: Pyodide (Python) + QuickJS (JS) in isolated renderer — post security review.
+	•	Team workspace: encrypted shared key vaults (opt-in sync).
+	•	Linux support.
+
+PART B — TECHNICAL ENGINEERING SPECIFICATION
+
+This section is written for engineers. It specifies the architecture, data contracts, component hierarchy, IPC patterns, security model, and performance budgets for ModelForge. Think of this as the equivalent of an Apple internal tech spec — precise, opinionated, and complete enough that a senior engineer can begin implementation on day one without a kickoff meeting.
+
+T1 — Architecture Overview
+Process Model
+ModelForge follows Electron's standard two-process model with strict context isolation enforced. There is no nodeIntegration in any renderer. All privileged operations happen in the main process and are exposed to renderers exclusively through a typed IPC bridge (contextBridge).
+
+Process
+Runtime
+Responsibility
+Can access Node.js APIs?
+Main Process (main.ts)
+Node.js 20 LTS
+App lifecycle, credential storage (keytar), all HTTP/WebSocket calls to AI providers, SQLite reads/writes, registry fetches, file I/O, OS notifications, auto-updater
+Yes — full Node.js
+Renderer Process (renderer/)
+Chromium + React 18
+All UI rendering, user interaction, displaying test results. Communicates with main via IPC only.
+No — contextIsolation: true, nodeIntegration: false
+Preload Script (preload.ts)
+Sandboxed Node context
+Exposes a typed window.modelforge API to the renderer via contextBridge. This is the ONLY bridge between renderer and main.
+Limited — contextBridge only
+
+Monorepo Structure
+modelforge/
+├── apps/
+│   └── desktop/                    # Electron app entry point
+│       ├── src/
+│       │   ├── main/               # Main process code
+│       │   │   ├── main.ts         # App lifecycle, BrowserWindow creation
+│       │   │   ├── ipc/            # IPC handler registrations
+│       │   │   │   ├── credentials.ipc.ts
+│       │   │   │   ├── provider.ipc.ts
+│       │   │   │   ├── history.ipc.ts
+│       │   │   │   └── registry.ipc.ts
+│       │   │   ├── adapters/       # ProviderAdapter implementations
+│       │   │   │   ├── base.adapter.ts
+│       │   │   │   ├── openai.adapter.ts
+│       │   │   │   ├── anthropic.adapter.ts
+│       │   │   │   └── ... (one per provider)
+│       │   │   └── db/             # SQLite access layer
+│       │   ├── renderer/           # React app (all UI)
+│       │   │   ├── app.tsx
+│       │   │   ├── screens/
+│       │   │   ├── workspaces/     # Per-category test UIs
+│       │   │   ├── components/     # Shared renderer components
+│       │   │   └── hooks/
+│       │   └── preload/
+│       │       └── preload.ts      # contextBridge surface
+├── packages/
+│   ├── antigravity/                # Shared UI component library (React)
+│   ├── registry-types/             # Shared TypeScript types for registry schema
+│   ├── i18n/                       # Translation files (en.json, future locales)
+│   └── shared-utils/               # Pure functions used by main + renderer
+├── registry/
+│   └── registry.json               # Bundled model registry (also published to CDN)
+└── scripts/
+    └── ci/                         # Release, notarisation, signing scripts
+
+Technology Stack
+Layer
+Technology
+Version
+Rationale
+Desktop shell
+Electron
+v30 (Chromium 126, Node 20)
+LTS + security patch cadence. Universal macOS binary via @electron/universal.
+UI framework
+React
+18.3
+Concurrent features, useTransition for non-blocking state during stream updates.
+UI components
+Antigravity (internal)
+—
+See framework definition above. Based on Radix UI primitives + Tailwind CSS tokens.
+State management
+Zustand
+4.x
+Lightweight; avoids Redux boilerplate. Stores: appStore, modelStore, historyStore, settingsStore.
+Main process HTTP
+axios
+1.x
+Interceptors for retry logic and rate limit header extraction.
+Streaming (SSE/ReadableStream)
+Native fetch / eventsource-parser
+—
+Main process uses Node fetch for SSE streams. eventsource-parser parses SSE frames.
+Credential storage
+keytar
+7.x
+macOS Keychain. Service name: 'modelforge'. Account: '{provider_id}:{user_hash}'.
+Local database
+better-sqlite3
+9.x
+Synchronous SQLite in main process. Schema-versioned migrations via custom migrator.
+Code editor
+Monaco Editor
+0.48
+Lazy-loaded via dynamic import. Used in code gen workspace only.
+Audio waveform
+wavesurfer.js
+7.x
+Renderer-side. Lazy-loaded for ASR and TTS workspaces only.
+3D viewer
+Three.js
+r160
+Renderer-side iframe, context-isolated. Lazy-loaded for 3D generation workspace only.
+Build tooling
+electron-vite
+2.x
+Vite-based build for main + renderer + preload. Fast HMR in development.
+Packaging
+electron-builder
+24.x
+DMG + zip for macOS. Universal binary. Notarisation via @electron/notarize.
+Linting / formatting
+ESLint + Prettier
+—
+Shared config in packages/eslint-config-modelforge.
+Testing
+Vitest + Playwright
+—
+Unit: Vitest. E2E: Playwright with Electron driver.
+Error monitoring
+Sentry (Electron SDK)
+—
+Opt-in. Captures unhandled exceptions in main + renderer. No PII in payloads.
+Telemetry
+PostHog (self-hosted option)
+—
+Opt-in. Event-level only (no screen recording). Anonymised user_id.
+Auto-updater
+electron-updater
+—
+GitHub Releases as update server. Delta updates where possible.
+
+T2 — Frontend Engineering Specification
+T2.1 — IPC Bridge (Preload / contextBridge)
+The preload script defines the entire surface area that the renderer may call. Every method returns a Promise. There are no synchronous IPC calls. The full typed interface:
+
+// preload.ts — the COMPLETE window.modelforge API surface
+// Renderer has access to ONLY these methods — nothing else from Node/Electron
+
+interface ModelforgeAPI {
+  // Credential management
+  credentials: {
+    save(providerId: string, key: string, extras?: Record<string,string>): Promise<void>
+    delete(providerId: string): Promise<void>
+    exists(providerId: string): Promise<boolean>
+    listConnected(): Promise<string[]>  // Returns array of connected provider IDs only
+    // NOTE: getKey() is intentionally NOT exposed. The renderer never sees the key value.
+  }
+
+  // Provider operations (main process makes all HTTP calls)
+  provider: {
+    verify(providerId: string, modelId: string): Promise<VerifyResult>
+    test(request: TestRequest): Promise<void>  // Streams results via IPC events
+    cancelTest(requestId: string): Promise<void>
+  }
+
+  // Registry
+  registry: {
+    getModels(category?: string): Promise<RegistryModel[]>
+    checkForUpdate(): Promise<{ hasUpdate: boolean; version: string }>
+    applyUpdate(): Promise<void>
+  }
+
+  // Test history
+  history: {
+    getRunsForModel(modelId: string, limit?: number): Promise<TestRun[]>
+    exportAsCSV(modelId: string): Promise<string>  // Returns file path
+    deleteRun(runId: string): Promise<void>
+  }
+
+  // Prompt templates
+  templates: {
+    list(category: string): Promise<PromptTemplate[]>
+    save(template: Omit<PromptTemplate, 'id' | 'createdAt'>): Promise<PromptTemplate>
+    delete(templateId: string): Promise<void>
+  }
+
+  // Events FROM main TO renderer (push, not pull)
+  on(channel: 'test:chunk', handler: (chunk: StreamChunk) => void): UnsubscribeFn
+  on(channel: 'test:done', handler: (metrics: EvaluationMetrics) => void): UnsubscribeFn
+  on(channel: 'test:error', handler: (error: ProviderError) => void): UnsubscribeFn
+  on(channel: 'registry:updated', handler: (version: string) => void): UnsubscribeFn
+  on(channel: 'job:progress', handler: (progress: JobProgress) => void): UnsubscribeFn
+}
+
+T2.2 — Application State (Zustand Stores)
+// stores/model.store.ts
+interface ModelStore {
+  // Registry state
+  models: RegistryModel[]
+  registryVersion: string
+  registryLastFetched: number  // Unix timestamp
+
+  // Connection state
+  connectedProviders: Set<string>  // Set of provider_id strings
+
+  // Active selection
+  activeCategory: Category | null
+  activeModelId: string | null
+  compareModeEnabled: boolean
+  compareModelId: string | null
+
+  // Actions
+  setActiveCategory(category: Category): void
+  setActiveModel(modelId: string): void
+  enableCompareMode(secondModelId: string): void
+  disableCompareMode(): void
+}
+
+// stores/test.store.ts
+interface TestStore {
+  // Current test state
+  status: 'idle' | 'running' | 'streaming' | 'done' | 'error'
+  requestId: string | null
+  outputText: string          // Accumulated stream text
+  outputImage: string | null  // base64 or blob URL
+  outputAudio: string | null  // blob URL
+  outputDetections: Detection[]
+  metrics: EvaluationMetrics | null
+  error: ProviderError | null
+
+  // Compare mode (mirrors for second model)
+  compareStatus: 'idle' | 'running' | 'streaming' | 'done' | 'error'
+  compareOutput: ...
+  compareMetrics: EvaluationMetrics | null
+
+  // Actions
+  startTest(request: TestRequest): void
+  appendChunk(chunk: StreamChunk): void
+  finalise(metrics: EvaluationMetrics): void
+  setError(error: ProviderError): void
+  reset(): void
+}
+
+T2.3 — Screen & Component Hierarchy
+App
+├── TitleBar (custom macOS traffic lights + search bar)
+├── Sidebar
+│   ├── CategoryList (collapsible sections)
+│   │   └── ModelListItem (connected indicator, click to activate)
+│   └── SettingsButton
+├── MainPanel
+│   ├── HomeScreen (shown when no category selected)
+│   │   └── CategoryGrid → CategoryTile × 13
+│   ├── CatalogueScreen (shown when category selected, no model selected)
+│   │   ├── SortFilterBar
+│   │   └── ModelTable → ModelRow × N
+│   ├── ConnectionScreen (shown when model selected, not connected)
+│   │   ├── ProviderInfoCard
+│   │   ├── ApiKeyForm
+│   │   │   └── [Conditional extra fields per provider]
+│   │   └── VerifyButton → SuccessBanner | ErrorBanner
+│   └── TestScreen (shown when model connected)
+│       ├── TestScreenHeader (model name, provider, re-verify, disconnect)
+│       ├── TabBar (Test | History | Evaluation)
+│       ├── CompareModeToggle
+│       └── WorkspacePanel (or SplitWorkspacePanel in compare mode)
+│           ├── TextGenWorkspace
+│           ├── CodeGenWorkspace
+│           ├── ImageGenWorkspace
+│           ├── ASRWorkspace
+│           ├── TTSWorkspace
+│           ├── EmbeddingsWorkspace
+│           ├── RerankerWorkspace
+│           ├── CVWorkspace
+│           ├── VideoGenWorkspace
+│           ├── MusicGenWorkspace
+│           └── Gen3DWorkspace
+│               ├── [InputPanel — category-specific]
+│               ├── [OutputPanel — category-specific]
+│               └── EvaluationDrawer (collapsible, shown after each test)
+└── OnboardingOverlay (shown on first launch until dismissed)
+    ├── OnboardingStep1Welcome
+    ├── OnboardingStep2CategoryPick
+    ├── OnboardingStep3Connect
+    └── OnboardingStep4FirstTest
+
+T2.4 — Streaming Output Pattern
+All text-based streaming (LLM completions, ASR real-time) uses the following pattern. The renderer never holds an open HTTP connection — all network I/O lives in the main process.
+
+// RENDERER — TextGenWorkspace.tsx
+const { startTest, appendChunk, finalise, setError, reset } = useTestStore()
+
+const handleRun = async () => {
+  reset()
+  const requestId = crypto.randomUUID()
+
+  // Subscribe to stream events BEFORE calling provider.test()
+  const unsub1 = window.modelforge.on('test:chunk', (chunk) => {
+    appendChunk(chunk)  // Zustand setter — triggers React re-render
+  })
+  const unsub2 = window.modelforge.on('test:done', (metrics) => {
+    finalise(metrics)
+    unsub1(); unsub2(); unsub3()
+  })
+  const unsub3 = window.modelforge.on('test:error', (err) => {
+    setError(err)
+    unsub1(); unsub2(); unsub3()
+  })
+
+  await window.modelforge.provider.test({ requestId, modelId, params, category })
+}
+
+// Output rendering uses useTransition to avoid blocking UI during rapid chunk appends
+const [output, setOutput] = useState('')
+const [isPending, startTransition] = useTransition()
+useEffect(() => {
+  startTransition(() => setOutput(testStore.outputText))
+}, [testStore.outputText])
+
+T2.5 — Workspace Input Parameter Contracts
+Each workspace receives a typed params object. The TestRequest type is the union of all possible workspace param shapes. The active workspace is responsible for rendering the correct inputs and constructing the params object before calling provider.test().
+
+// shared types — packages/registry-types/src/test-request.ts
+
+type TextGenParams = {
+  prompt: string
+  systemPrompt?: string
+  history?: ChatMessage[]
+  temperature: number        // 0.0 – 2.0
+  maxTokens: number
+  topP: number               // 0.0 – 1.0
+  stopSequences: string[]
+  seed?: number
+  frequencyPenalty: number
+  presencePenalty: number
+  responseFormat: 'text' | 'json_object'
+  stream: true               // Always true for text gen
+}
+
+type ImageGenParams = {
+  prompt: string
+  negativePrompt?: string
+  seed?: number
+  width: number
+  height: number
+  steps?: number
+  guidanceScale?: number
+  stylePreset?: string
+}
+
+type ASRParams = {
+  audioFilePath: string      // Absolute path — provided by main after file dialog
+  language?: string          // ISO 639-1 code or 'auto'
+  diarize: boolean
+  punctuate: boolean
+  timestamps: 'none' | 'word' | 'utterance'
+  smartFormat: boolean
+}
+
+// ... one type per category
+
+type TestRequest = {
+  requestId: string          // UUID — used to cancel and correlate events
+  modelId: string
+  category: Category
+  params: TextGenParams | ImageGenParams | ASRParams | ...
+}
+
+T2.6 — Antigravity Component Guidelines for Engineers
+	•	Import components from '@modelforge/antigravity' — never from their underlying Radix or HTML primitives directly in feature code.
+	•	Every interactive element must use the Antigravity focus-ring CSS class. Do not add custom focus styles; they will break WCAG compliance.
+	•	For aria-live streaming output regions: use <LiveRegion politeness='polite'> from Antigravity, not a raw div with aria-live. The component handles VoiceOver quirks on macOS.
+	•	Colour values must come from the design token system (--color-primary, --color-surface, etc.). Hardcoded hex values are rejected in PR review.
+	•	All strings passed to UI must use the t() hook from react-i18next. Hardcoded English strings in JSX are rejected in PR review.
+	•	Async state: use the Antigravity <AsyncBoundary> component (wraps React Suspense + ErrorBoundary). Do not write raw try/catch in render functions.
+
+T2.7 — Performance Budgets (Renderer)
+Metric
+Budget
+Measurement Tool
+Initial JS bundle size (core, no lazy chunks)
+< 500 KB gzipped
+Vite bundle analyser in CI
+Monaco editor chunk (lazy)
+< 2 MB gzipped
+Loaded only when code gen workspace activated
+Three.js chunk (lazy)
+< 800 KB gzipped
+Loaded only when 3D workspace activated
+Time to interactive (cold launch)
+< 1.5s on M1 MacBook Air
+Playwright performance.timing in E2E
+Stream chunk → DOM update latency
+< 16ms (one frame at 60fps)
+Chrome DevTools trace in dev mode
+Zustand state update → re-render
+< 8ms
+React DevTools Profiler
+
+T3 — Backend Engineering Specification (Electron Main Process)
+In Electron, the 'backend' is the main process. It has full Node.js access and is the only process that performs I/O, storage, and network operations. Treat it with the same discipline you would apply to a production API server.
+
+T3.1 — ProviderAdapter Architecture
+All AI provider calls go through a ProviderAdapter. No provider-specific code lives outside of its adapter file. This is the most important architectural constraint in the codebase.
+
+// main/adapters/base.adapter.ts
+abstract class BaseProviderAdapter {
+  abstract readonly providerId: string
+
+  // Called during API key verification
+  abstract verify(credentials: ProviderCredentials): Promise<VerifyResult>
+
+  // Called to execute a test. Must emit IPC events as results arrive.
+  abstract execute(request: TestRequest, credentials: ProviderCredentials,
+                   emitter: IPCEmitter): Promise<void>
+
+  // Shared retry logic with exponential backoff
+  protected async withRetry<T>(
+    fn: () => Promise<T>,
+    maxAttempts = 3,
+    baseDelayMs = 1000
+  ): Promise<T> {
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      try {
+        return await fn()
+      } catch (err) {
+        if (err.status === 429) {
+          const retryAfter = parseInt(err.headers['retry-after'] ?? '1') * 1000
+          const delay = Math.max(retryAfter, baseDelayMs * Math.pow(2, attempt - 1))
+          if (attempt < maxAttempts) await sleep(delay)
+        } else if (attempt === maxAttempts || !isRetryable(err.status)) {
+          throw err
+        }
+      }
+    }
+  }
+
+  // Shared rate limit header extraction
+  protected extractRateLimit(headers: Headers): RateLimitInfo {
+    return {
+      remaining: parseInt(headers.get('x-ratelimit-remaining-requests') ?? '-1'),
+      resetAt: headers.get('x-ratelimit-reset-requests') ?? null,
+      limitType: 'requests'
+    }
+  }
+}
+
+// Example concrete adapter
+// main/adapters/anthropic.adapter.ts
+class AnthropicAdapter extends BaseProviderAdapter {
+  readonly providerId = 'anthropic'
+  private client: Anthropic | null = null
+
+  private getClient(apiKey: string): Anthropic {
+    // Instantiate client with key from Keychain — never stored as class state
+    return new Anthropic({ apiKey })
+  }
+
+  async verify(creds: ProviderCredentials): Promise<VerifyResult> {
+    try {
+      const client = this.getClient(creds.apiKey)
+      await client.models.list()  // Lightweight verify call
+      return { success: true }
+    } catch (err) {
+      return { success: false, error: mapAnthropicError(err) }
+    }
+  }
+
+  async execute(req: TestRequest, creds: ProviderCredentials, emit: IPCEmitter) {
+    const client = this.getClient(creds.apiKey)
+    const params = req.params as TextGenParams
+    const startTime = performance.now()
+    let firstChunkTime: number | null = null
+
+    const stream = await this.withRetry(() =>
+      client.messages.stream({
+        model: req.modelId,
+        max_tokens: params.maxTokens,
+        messages: buildMessages(params),
+        system: params.systemPrompt,
+        temperature: params.temperature,
+        stream: true
+      })
+    )
+
+    for await (const event of stream) {
+      if (event.type === 'content_block_delta' && event.delta.type === 'text_delta') {
+        if (!firstChunkTime) firstChunkTime = performance.now()
+        emit('test:chunk', { requestId: req.requestId, text: event.delta.text })
+      }
+    }
+
+    const finalMsg = await stream.finalMessage()
+    emit('test:done', {
+      requestId: req.requestId,
+      ttft: firstChunkTime ? firstChunkTime - startTime : null,
+      totalTime: performance.now() - startTime,
+      promptTokens: finalMsg.usage.input_tokens,
+      completionTokens: finalMsg.usage.output_tokens,
+      finishReason: finalMsg.stop_reason,
+      cacheReadTokens: finalMsg.usage.cache_read_input_tokens ?? 0
+    })
+  }
+}
+
+T3.2 — IPC Handler Registration
+// main/ipc/provider.ipc.ts
+import { ipcMain } from 'electron'
+import { AdapterRegistry } from '../adapters/adapter-registry'
+import { CredentialStore } from '../credentials/credential-store'
+
+export function registerProviderHandlers(emitter: IPCEmitter) {
+  ipcMain.handle('provider:verify', async (_, providerId: string, modelId: string) => {
+    const adapter = AdapterRegistry.get(providerId)
+    const credentials = await CredentialStore.get(providerId)
+    return adapter.verify(credentials)
+  })
+
+  ipcMain.handle('provider:test', async (event, request: TestRequest) => {
+    const adapter = AdapterRegistry.get(request.modelId)  // mapped via registry
+    const credentials = await CredentialStore.get(adapter.providerId)
+
+    // Store AbortController so we can cancel in-flight requests
+    const abort = new AbortController()
+    ActiveRequests.set(request.requestId, abort)
+
+    try {
+      await adapter.execute(request, credentials, emitter)
+    } catch (err) {
+      emitter.emit('test:error', { requestId: request.requestId, ...mapError(err) })
+    } finally {
+      ActiveRequests.delete(request.requestId)
+    }
+  })
+
+  ipcMain.handle('provider:cancel', async (_, requestId: string) => {
+    ActiveRequests.get(requestId)?.abort()
+  })
+}
+
+T3.3 — Credential Store
+// main/credentials/credential-store.ts
+import keytar from 'keytar'
+
+const SERVICE_NAME = 'modelforge'
+
+export const CredentialStore = {
+  // Account key format: '{providerId}:{appInstanceId}'
+  // appInstanceId = machine-unique UUID generated on first launch, stored in app userData
+  // This namespacing prevents credential collisions if multiple users share a machine
+
+  async save(providerId: string, apiKey: string, extras?: Record<string,string>) {
+    const account = buildAccount(providerId)
+    // Main credential
+    await keytar.setPassword(SERVICE_NAME, account, apiKey)
+    // Extra fields (org_id, project_id, etc.) stored as separate entries
+    if (extras) {
+      for (const [key, value] of Object.entries(extras)) {
+        await keytar.setPassword(SERVICE_NAME, `${account}:${key}`, value)
+      }
+    }
+  },
+
+  async get(providerId: string): Promise<ProviderCredentials> {
+    const account = buildAccount(providerId)
+    const apiKey = await keytar.getPassword(SERVICE_NAME, account)
+    if (!apiKey) throw new Error(`No credentials found for provider: ${providerId}`)
+    // NOTE: This method is only callable from the main process.
+    // The preload script does NOT expose getPassword to the renderer.
+    return { apiKey, extras: await getExtras(account) }
+  },
+
+  async delete(providerId: string) {
+    const account = buildAccount(providerId)
+    await keytar.deletePassword(SERVICE_NAME, account)
+    // Delete all extra field entries too
+    const allCreds = await keytar.findCredentials(SERVICE_NAME)
+    for (const c of allCreds.filter(c => c.account.startsWith(`${account}:`))) {
+      await keytar.deletePassword(SERVICE_NAME, c.account)
+    }
+  },
+
+  async exists(providerId: string): Promise<boolean> {
+    return !!(await keytar.getPassword(SERVICE_NAME, buildAccount(providerId)))
+  }
+}
+
+T3.4 — SQLite Database Schema
+-- db/schema.sql
+-- Migrations are applied on app startup via a versioned migrator.
+-- Migration files: db/migrations/001_initial.sql, 002_templates.sql, etc.
+
+-- Connected providers (lightweight index; truth is in Keychain)
+CREATE TABLE connections (
+  provider_id    TEXT PRIMARY KEY,
+  model_ids      TEXT NOT NULL,  -- JSON array of verified model IDs
+  connected_at   INTEGER NOT NULL,  -- Unix ms
+  last_verified  INTEGER,
+  token_total    INTEGER DEFAULT 0
+);
+
+-- Test run history
+CREATE TABLE test_runs (
+  id              TEXT PRIMARY KEY,  -- UUID
+  model_id        TEXT NOT NULL,
+  provider_id     TEXT NOT NULL,
+  category        TEXT NOT NULL,
+  params_json     TEXT NOT NULL,     -- Full input params (no API keys)
+  output_summary  TEXT,              -- First 500 chars of text output, or metadata
+  metrics_json    TEXT NOT NULL,     -- Full EvaluationMetrics JSON
+  ran_at          INTEGER NOT NULL,  -- Unix ms
+  error           TEXT               -- Null if successful
+);
+CREATE INDEX idx_runs_model ON test_runs(model_id, ran_at DESC);
+CREATE INDEX idx_runs_category ON test_runs(category, ran_at DESC);
+
+-- Prompt templates
+CREATE TABLE prompt_templates (
+  id          TEXT PRIMARY KEY,  -- UUID
+  name        TEXT NOT NULL,
+  category    TEXT NOT NULL,
+  params_json TEXT NOT NULL,     -- Full workspace params snapshot
+  created_at  INTEGER NOT NULL,
+  updated_at  INTEGER NOT NULL
+);
+CREATE INDEX idx_templates_category ON prompt_templates(category);
+
+-- App metadata (schema version, registry version, etc.)
+CREATE TABLE metadata (
+  key    TEXT PRIMARY KEY,
+  value  TEXT NOT NULL
+);
+
+T3.5 — Registry Fetch & Cache
+// main/registry/registry-manager.ts
+const REGISTRY_CDN_URL = 'https://registry.modelforge.app/registry.json'
+const REGISTRY_CACHE_PATH = path.join(app.getPath('userData'), 'registry-cache.json')
+const BUNDLED_REGISTRY_PATH = path.join(__dirname, '../../registry/registry.json')
+
+export async function loadRegistry(): Promise<Registry> {
+  // 1. Try remote registry
+  try {
+    const response = await fetch(REGISTRY_CDN_URL, {
+      headers: { 'Cache-Control': 'max-age=3600' },
+      signal: AbortSignal.timeout(5000)  // 5s timeout; don't block app launch
+    })
+    if (response.ok) {
+      const remote = await response.json() as Registry
+      if (isNewerVersion(remote.registry_version, getCachedVersion())) {
+        await fs.writeFile(REGISTRY_CACHE_PATH, JSON.stringify(remote))
+        return remote
+      }
+    }
+  } catch {
+    // Network unavailable — fall through to cache
+  }
+
+  // 2. Try local cache
+  try {
+    const cached = JSON.parse(await fs.readFile(REGISTRY_CACHE_PATH, 'utf8'))
+    return cached
+  } catch {
+    // No cache — fall through to bundled
+  }
+
+  // 3. Bundled fallback (always present)
+  return JSON.parse(await fs.readFile(BUNDLED_REGISTRY_PATH, 'utf8'))
+}
+
+T3.6 — File Handling for Multimodal Inputs
+// main/ipc/files.ipc.ts
+// File paths are shared from renderer → main via IPC.
+// The renderer NEVER reads file contents — it triggers a dialog in main.
+
+ipcMain.handle('files:openAudioPicker', async () => {
+  const result = await dialog.showOpenDialog({
+    properties: ['openFile'],
+    filters: [{ name: 'Audio', extensions: ['wav','mp3','m4a','flac','ogg','opus'] }]
+  })
+  if (result.canceled || result.filePaths.length === 0) return null
+  return result.filePaths[0]  // Absolute path returned to renderer
+  // The actual file read happens in the adapter when execute() is called
+})
+
+ipcMain.handle('files:openImagePicker', async () => {
+  const result = await dialog.showOpenDialog({
+    properties: ['openFile'],
+    filters: [{ name: 'Image', extensions: ['jpg','jpeg','png','webp','gif'] }]
+  })
+  return result.canceled ? null : result.filePaths[0]
+})
+
+// For drag-and-drop: renderer receives the file path from the DragEvent.
+// It sends the path to main via IPC. Main validates the extension
+// against the allowed list before reading the file.
+
+function validateFileExtension(filePath: string, allowedExtensions: string[]): boolean {
+  const ext = path.extname(filePath).toLowerCase().slice(1)
+  return allowedExtensions.includes(ext)
+}
+
+T3.7 — Telemetry & Error Reporting
+// main/telemetry/telemetry.ts
+// All telemetry is opt-in. Enabled state read from SQLite metadata table.
+// No telemetry fires before the user has seen and responded to the opt-in prompt.
+
+const ALLOWED_EVENTS = [
+  'app_launched',
+  'onboarding_step_completed',
+  'provider_verify_attempt',
+  'provider_verify_success',
+  'provider_verify_error',      // Error type only — no key values
+  'test_run_started',
+  'test_run_completed',          // Category + model_id + metrics (no output content)
+  'compare_mode_activated',
+  'template_saved',
+  'export_triggered',
+  'registry_updated',
+] as const
+
+// NEVER include in any event payload:
+// - API keys (even partial)
+// - Prompt text or model output content
+// - File paths
+// - User-provided reference transcripts
+
+export function track(event: typeof ALLOWED_EVENTS[number], props?: Record<string, unknown>) {
+  if (!isTelemetryEnabled()) return
+  posthog.capture(event, {
+    ...props,
+    app_version: app.getVersion(),
+    platform: process.platform,
+    arch: process.arch,
+    // distinct_id is a UUID stored in app.getPath('userData') — never PII
+  })
+}
+
+T3.8 — Main Process Performance Budgets
+Metric
+Budget
+Measurement
+App cold launch to BrowserWindow ready
+< 800ms
+main process log timestamps
+Registry fetch + parse on launch
+< 300ms (or timeout to cached)
+Timer around loadRegistry()
+API key verification round trip (network excluded)
+< 50ms overhead (adapter code only)
+Instrumented in adapter.verify()
+SQLite write (single test run)
+< 5ms
+better-sqlite3 synchronous — measured in CI smoke test
+IPC handler round trip (no network)
+< 2ms
+Measured in Playwright test
+keytar.getPassword()
+< 10ms
+Measured on M1 in CI
+
+T4 — Security Model
+Control
+Implementation
+Rationale
+Context isolation
+contextIsolation: true, nodeIntegration: false in all BrowserWindow instances
+Prevents renderer-side XSS from accessing Node.js APIs
+No remote content in renderer
+Content Security Policy: default-src 'self'; no eval, no inline scripts
+Prevents script injection via provider-returned content
+API keys never in renderer
+CredentialStore.get() only accessible from main process. preload.ts never exposes getPassword.
+Even if renderer is compromised, attacker cannot exfiltrate keys
+File path validation
+All file paths received from renderer validated for extension before read
+Prevents directory traversal attacks via crafted file paths
+No code execution (v1.0)
+'Run in sandbox' deferred. No eval() anywhere in codebase. ESLint no-eval rule enforced.
+Eliminates the largest attack surface in the app
+Dependency auditing
+npm audit in CI on every PR. Dependabot for automated patch PRs. No packages with >1 year without a commit.
+Supply chain risk reduction
+macOS Keychain encryption
+Handled by OS — AES-256 at rest, locked to user login
+Industry-standard credential storage
+Telemetry data minimisation
+Fixed allowlist of event names + property keys. Separate review required to add new telemetry events.
+Privacy by design; GDPR-compatible
+Sentry error scrubbing
+beforeSend hook strips file paths, prompt text, API key patterns from error payloads
+Ensures no accidental PII in crash reports
+
+T5 — CI/CD & Release Pipeline
+GitHub Actions Workflows
+Workflow
+Trigger
+Steps
+PR Checks
+Every PR to main
+ESLint + Prettier → TypeScript typecheck → Vitest unit tests → Playwright E2E (headless Electron) → Bundle size check (fail if >budgets)
+Nightly Smoke Tests
+Cron: 02:00 UTC daily
+For each of the top 10 providers: call verify_endpoint with CI-managed test API keys → alert to Slack on failure
+Release Build
+Tag push: v*.*.*
+electron-vite build → electron-builder universal macOS DMG → @electron/notarize (Apple notary) → electron-updater publish to GitHub Releases → Upload DMG to release assets
+Registry Publish
+Push to registry/registry.json
+Validate schema → Upload to Cloudflare R2 CDN → Invalidate CDN cache → Post Slack notification
+
+Environments
+Environment
+Registry URL
+Telemetry
+Notes
+Development (npm run dev)
+localhost:3456/registry.json (local server)
+Disabled
+HMR on renderer. Main process restarts on file change.
+Staging
+registry-staging.modelforge.app
+Enabled (separate PostHog project)
+Built with electron-builder. Installed locally via DMG. Notarisation skipped in staging.
+Production
+registry.modelforge.app
+Enabled (production PostHog)
+Fully notarised and stapled. Distributed via GitHub Releases + electron-updater.
+
+ModelForge PRD v2.0  ·  Confidential Internal Document  ·  February 2026

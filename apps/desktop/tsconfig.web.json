@@ -1,0 +1,32 @@
+{
+  "extends": "@electron-toolkit/tsconfig/tsconfig.web.json",
+  "include": [
+    "src/renderer/src/env.d.ts",
+    "src/renderer/src/**/*",
+    "src/renderer/src/**/*.tsx",
+    "src/preload/*.d.ts",
+    "../../packages/*/src/**/*"
+  ],
+  "compilerOptions": {
+    "composite": true,
+    "jsx": "react-jsx",
+    "baseUrl": ".",
+    "paths": {
+      "@renderer/*": [
+        "src/renderer/src/*"
+      ],
+      "@dexterai/registry-types": [
+        "../../packages/registry-types/src/index.ts"
+      ],
+      "@dexterai/shared-utils": [
+        "../../packages/shared-utils/src/index.ts"
+      ],
+      "@dexterai/i18n": [
+        "../../packages/i18n/src/index.ts"
+      ],
+      "@dexterai/antigravity": [
+        "../../packages/antigravity/src/index.ts"
+      ]
+    }
+  }
+}
