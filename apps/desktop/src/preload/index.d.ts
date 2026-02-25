@@ -24,7 +24,7 @@ declare global {
         save(providerId: string, key: string, extras?: Record<string, string>): Promise<void>
         delete(providerId: string): Promise<void>
         exists(providerId: string): Promise<boolean>
-        listConnected(): Promise<string[]>
+        listConnected(): Promise<{ providers: string[]; models: string[] }>
       }
       provider: {
         verify(providerId: string, modelId: string): Promise<VerifyResult>
@@ -48,6 +48,12 @@ declare global {
       }
       files: {
         openAudioPicker(): Promise<{ path: string; name: string } | null>
+        saveFile(args: {
+          content: string | Buffer | Uint8Array
+          title: string
+          defaultName: string
+          filters: { name: string; extensions: string[] }[]
+        }): Promise<{ success: boolean; filePath?: string; error?: string }>
       }
       conversations: {
         list(): Promise<ConversationSummary[]>
@@ -55,6 +61,7 @@ declare global {
         create(title?: string, settingsJson?: string): Promise<Conversation | null>
         update(id: string, updates: { title?: string; settings_json?: string }): Promise<{ success: boolean }>
         delete(id: string): Promise<{ success: boolean }>
+        export(id: string, format: 'markdown' | 'json'): Promise<string>
       }
       messages: {
         list(conversationId: string): Promise<ChatMessage[]>
@@ -91,6 +98,10 @@ declare global {
       }
       settings: {
         deleteData(mode: 'chat' | 'keys_analytics' | 'everything'): Promise<{ success: boolean; error?: string }>
+      }
+      zoom: {
+        setFactor(factor: number): void
+        getFactor(): number
       }
       on(channel: 'test:chunk', handler: (chunk: StreamChunk) => void): () => void
       on(channel: 'test:done', handler: (metrics: EvaluationMetrics) => void): () => void

@@ -11,6 +11,7 @@ interface ChatInputProps {
   selectedModelId: string | null
   selectedProviderId: string | null
   connectedProviders: string[]
+  connectedModels: string[]
   onModelChange: (modelId: string, providerId: string) => void
 }
 
@@ -22,6 +23,7 @@ export default function ChatInput({
   selectedModelId,
   selectedProviderId,
   connectedProviders,
+  connectedModels,
   onModelChange
 }: ChatInputProps) {
   const [input, setInput] = useState('')
@@ -76,6 +78,7 @@ export default function ChatInput({
           selectedModelId={selectedModelId}
           selectedProviderId={selectedProviderId}
           connectedProviders={connectedProviders}
+          connectedModels={connectedModels}
           onSelect={onModelChange}
         />
 

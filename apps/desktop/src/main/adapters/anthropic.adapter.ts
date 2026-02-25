@@ -36,7 +36,7 @@ export class AnthropicAdapter extends BaseProviderAdapter {
         const stream = await this.withRetry(() =>
             client.messages.create({
                 model: req.modelId,
-                max_tokens: params.maxTokens || 1024,
+                max_tokens: params.maxTokens || 8192,
                 messages: params.messages || [{ role: 'user', content: params.prompt }],
                 system: params.systemPrompt,
                 temperature: params.temperature,
@@ -47,10 +47,12 @@ export class AnthropicAdapter extends BaseProviderAdapter {
         let inputTokens = 0;
         let outputTokens = 0;
         let stopReason = '';
+        let resolvedModel = '';
 
         for await (const event of stream) {
             if (event.type === 'message_start') {
                 inputTokens = event.message.usage.input_tokens;
+                resolvedModel = event.message.model || '';
             } else if (event.type === 'message_delta') {
                 stopReason = event.delta.stop_reason || '';
                 if (event.usage) outputTokens = event.usage.output_tokens;
@@ -67,7 +69,8 @@ export class AnthropicAdapter extends BaseProviderAdapter {
             promptTokens: inputTokens,
             completionTokens: outputTokens,
             finishReason: stopReason,
-            cacheReadTokens: 0
+            cacheReadTokens: 0,
+            resolvedModel
         });
     }
 }

@@ -74,6 +74,70 @@ const STATIC_MODELS: RegistryModel[] = [
         supported_features: ['thinking', 'tool_calling', 'vision']
     },
 
+    // ── New NVIDIA NIM Text Generation models ──
+    {
+        id: 'deepseek-ai/deepseek-v3.1', provider_id: 'nvidia_nim', category: 'text_generation',
+        name: 'DeepSeek V3.1', description: 'NVIDIA NIM: High-tier hybrid reasoning with fast thinking and tool-use. 128K context.',
+        context_window: 128000, supported_features: ['thinking', 'system_prompt']
+    },
+    {
+        id: 'deepseek-ai/deepseek-r1-distill-llama-8b', provider_id: 'nvidia_nim', category: 'text_generation',
+        name: 'DeepSeek R1 Distill Llama 8B', description: 'NVIDIA NIM: Efficient reasoning distilled from R1 into Llama 3.1 8B.',
+        context_window: 128000, supported_features: ['thinking', 'system_prompt']
+    },
+    {
+        id: 'deepseek-ai/deepseek-r1-distill-qwen-32b', provider_id: 'nvidia_nim', category: 'text_generation',
+        name: 'DeepSeek R1 Distill Qwen 32B', description: 'NVIDIA NIM: Top-tier math and logic distillation into Qwen 2.5 32B.',
+        context_window: 128000, supported_features: ['thinking', 'system_prompt']
+    },
+    {
+        id: 'qwen/qwen3-next-80b-a3b-instruct', provider_id: 'nvidia_nim', category: 'text_generation',
+        name: 'Qwen3 Next 80B', description: 'NVIDIA NIM: Ultra-long context hybrid MoE, 119 languages.',
+        context_window: 256000, supported_features: ['system_prompt']
+    },
+    {
+        id: 'nvidia/llama-3.3-nemotron-super-49b-v1.5', provider_id: 'nvidia_nim', category: 'text_generation',
+        name: 'Nemotron Super 49B v1.5', description: 'NVIDIA NIM: Optimized instruction-following based on Llama 3.3.',
+        context_window: 128000, supported_features: ['system_prompt']
+    },
+    {
+        id: 'zhipuai/glm-5-744b-moe', provider_id: 'nvidia_nim', category: 'text_generation',
+        name: 'GLM-5 744B MoE', description: 'NVIDIA NIM: 744B MoE for complex systems reasoning and agentic tasks.',
+        context_window: 128000, supported_features: ['system_prompt']
+    },
+
+    // ── New Google Gemini 1.5 Legacy Text Generation models ──
+    {
+        id: 'gemini-1.5-pro', provider_id: 'google', category: 'text_generation',
+        name: 'Gemini 1.5 Pro', description: 'Google heavy-lifter for complex reasoning with up to 2M token context.',
+        context_window: 2000000, pricing: { input_per_1m_tokens: 1.25, output_per_1m_tokens: 5.00 },
+        supported_features: ['vision', 'system_prompt']
+    },
+    {
+        id: 'gemini-1.5-pro-latest', provider_id: 'google', category: 'text_generation',
+        name: 'Gemini 1.5 Pro Latest', description: 'Points to the most recent iteration of the 1.5 Pro model.',
+        context_window: 2000000, pricing: { input_per_1m_tokens: 1.25, output_per_1m_tokens: 5.00 },
+        supported_features: ['vision', 'system_prompt']
+    },
+    {
+        id: 'gemini-1.5-flash', provider_id: 'google', category: 'text_generation',
+        name: 'Gemini 1.5 Flash', description: 'Optimized for speed and cost-efficiency, ideal for everyday chat. 1M context.',
+        context_window: 1000000, pricing: { input_per_1m_tokens: 0.075, output_per_1m_tokens: 0.30 },
+        supported_features: ['vision', 'system_prompt']
+    },
+    {
+        id: 'gemini-1.5-flash-8b', provider_id: 'google', category: 'text_generation',
+        name: 'Gemini 1.5 Flash 8B', description: 'Ultra-small, highly efficient variant for simple, rapid tasks.',
+        context_window: 1000000, pricing: { input_per_1m_tokens: 0.0375, output_per_1m_tokens: 0.15 },
+        supported_features: ['system_prompt']
+    },
+    {
+        id: 'gemini-1.5-flash-latest', provider_id: 'google', category: 'text_generation',
+        name: 'Gemini 1.5 Flash Latest', description: 'Points to the most recent iteration of the 1.5 Flash model.',
+        context_window: 1000000, pricing: { input_per_1m_tokens: 0.075, output_per_1m_tokens: 0.30 },
+        supported_features: ['vision', 'system_prompt']
+    },
+
     // Code Generation
     {
         id: 'gpt-4o', provider_id: 'openai', category: 'code_generation',
@@ -113,6 +177,17 @@ const STATIC_MODELS: RegistryModel[] = [
         context_window: 262144, pricing: { input_per_1m_tokens: 0.60, output_per_1m_tokens: 3.60 },
         supported_features: ['thinking', 'tool_calling', 'vision']
     },
+    // ── New NVIDIA NIM Code Generation models ──
+    {
+        id: 'deepseek-ai/deepseek-v3.1-terminus', provider_id: 'nvidia_nim', category: 'code_generation',
+        name: 'DeepSeek V3.1 Terminus', description: 'NVIDIA NIM: Optimized for agentic search, code generation, and tool orchestration.',
+        context_window: 128000, supported_features: ['thinking', 'system_prompt']
+    },
+    {
+        id: 'qwen/qwen3-coder-480b-a35b-instruct', provider_id: 'nvidia_nim', category: 'code_generation',
+        name: 'Qwen3 Coder 480B', description: 'NVIDIA NIM: 480B-parameter mega coding model for software development.',
+        context_window: 128000, supported_features: ['system_prompt']
+    },
 
     // Image Generation
     {
@@ -146,6 +221,12 @@ const STATIC_MODELS: RegistryModel[] = [
     {
         id: 'moonshotai/kimi-k2.5', provider_id: 'nvidia_nim', category: 'image_understanding',
         name: 'Kimi K2.5 Multimodal', description: 'NVIDIA NIM: General purpose vision.', context_window: 64000
+    },
+    // ── New NVIDIA NIM Image Understanding model ──
+    {
+        id: 'nvidia/nemotron-nano-12b-v2-vl', provider_id: 'nvidia_nim', category: 'image_understanding',
+        name: 'Nemotron Nano 12B v2 VL', description: 'NVIDIA NIM: Small open multimodal reasoning with video and image understanding.',
+        context_window: 16000, supported_features: ['vision']
     },
 
     // Audio Transcription

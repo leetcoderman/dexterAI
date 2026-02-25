@@ -5,8 +5,10 @@ import type { ConversationSummary, RegistryModel } from '@dexterai/registry-type
 interface AppState {
   isOnboarded: boolean
   connectedProviders: string[]
+  connectedModels: string[]
   setOnboarded: (status: boolean) => void
   setConnectedProviders: (providers: string[]) => void
+  setConnectedModels: (models: string[]) => void
   addConnectedProvider: (providerId: string) => void
   removeConnectedProvider: (providerId: string) => void
   syncConnectedProviders: () => Promise<void>
@@ -23,6 +25,16 @@ interface AppState {
   selectedModelId: string | null
   selectedProviderId: string | null
   setSelectedModel: (modelId: string, providerId: string) => void
+
+  // UI state
+  sidebarCollapsed: boolean
+  toggleSidebar: () => void
+  zoomLevel: number
+  setZoomLevel: (level: number) => void
+
+  // Chat Local UI
+  isChatSettingsOpen: boolean
+  setIsChatSettingsOpen: (open: boolean) => void
 }
 
 export const useAppStore = create<AppState>()(
@@ -30,8 +42,10 @@ export const useAppStore = create<AppState>()(
     (set) => ({
       isOnboarded: false,
       connectedProviders: [],
+      connectedModels: [],
       setOnboarded: (status) => set({ isOnboarded: status }),
       setConnectedProviders: (providers) => set({ connectedProviders: providers }),
+      setConnectedModels: (models) => set({ connectedModels: models }),
       addConnectedProvider: (providerId) =>
         set((state) => ({
           connectedProviders: state.connectedProviders.includes(providerId)
@@ -44,8 +58,8 @@ export const useAppStore = create<AppState>()(
         })),
       syncConnectedProviders: async () => {
         try {
-          const providers = await window.dexterai.credentials.listConnected()
-          set({ connectedProviders: providers })
+          const result = await window.dexterai.credentials.listConnected()
+          set({ connectedProviders: result.providers, connectedModels: result.models })
         } catch (e) {
           console.error('Failed to sync connected providers from DB:', e)
         }
@@ -77,15 +91,27 @@ export const useAppStore = create<AppState>()(
       selectedModelId: null,
       selectedProviderId: null,
       setSelectedModel: (modelId, providerId) =>
-        set({ selectedModelId: modelId, selectedProviderId: providerId })
+        set({ selectedModelId: modelId, selectedProviderId: providerId }),
+
+      sidebarCollapsed: false,
+      toggleSidebar: () => set((state) => ({ sidebarCollapsed: !state.sidebarCollapsed })),
+
+      zoomLevel: 100,
+      setZoomLevel: (level) => set({ zoomLevel: level }),
+
+      isChatSettingsOpen: false,
+      setIsChatSettingsOpen: (open) => set({ isChatSettingsOpen: open })
     }),
     {
       name: 'dexterai-storage',
       partialize: (state) => ({
         isOnboarded: state.isOnboarded,
         connectedProviders: state.connectedProviders,
+        connectedModels: state.connectedModels,
         selectedModelId: state.selectedModelId,
-        selectedProviderId: state.selectedProviderId
+        selectedProviderId: state.selectedProviderId,
+        sidebarCollapsed: state.sidebarCollapsed,
+        zoomLevel: state.zoomLevel
       })
     }
   )

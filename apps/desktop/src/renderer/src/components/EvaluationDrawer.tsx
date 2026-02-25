@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { ChevronUp, ChevronDown, Activity, Clock, AlignLeft, CheckCircle2, Box } from 'lucide-react'
+import { ChevronUp, ChevronDown, Activity, Clock, AlignLeft, CheckCircle2, Box, Cpu } from 'lucide-react'
 import { cn } from '@dexterai/shared-utils'
 import { EvaluationMetrics } from '@dexterai/registry-types'
 
@@ -91,6 +91,14 @@ export default function EvaluationDrawer({ modelId }: { modelId: string }) {
                   label="Finish"
                   value={metrics.finishReason}
                   valueClass="text-text-muted uppercase text-[10px] font-mono"
+                />
+              )}
+              {metrics.resolvedModel && (
+                <MetricCard
+                  icon={<Cpu className="w-3.5 h-3.5" />}
+                  label="Model Served"
+                  value={metrics.resolvedModel}
+                  valueClass="text-primary text-[10px] font-mono"
                 />
               )}
             </>

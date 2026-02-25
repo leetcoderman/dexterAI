@@ -1,22 +1,24 @@
 import { useState, useEffect, useMemo } from 'react'
-import { Search, Key, ChevronRight, Sparkles } from 'lucide-react'
+import { Search, Key, ChevronRight, Sparkles, Brain } from 'lucide-react'
+import { cn } from '@dexterai/shared-utils'
 import { useAppStore } from '../store'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { RegistryModel } from '@dexterai/registry-types'
 
-const CATEGORY_LABELS: Record<string, string> = {
-  text_generation: 'Text',
-  code_generation: 'Code',
-  image_generation: 'Image',
-  audio_transcription: 'Audio',
-  text_to_speech: 'TTS'
-}
+const PROVIDER_CONFIG = [
+  { id: 'openai', label: 'OpenAI', icon: Sparkles },
+  { id: 'anthropic', label: 'Anthropic', icon: Sparkles },
+  { id: 'google', label: 'Google Gemini', icon: Sparkles },
+  { id: 'nvidia_nim', label: 'NVIDIA NIM', icon: Sparkles },
+  { id: 'deepgram', label: 'Deepgram', icon: Sparkles }
+]
 
 const PROVIDER_COLORS: Record<string, string> = {
-  openai: 'bg-emerald-500/10 text-emerald-400',
-  anthropic: 'bg-orange-500/10 text-orange-400',
-  google: 'bg-blue-500/10 text-blue-400',
-  deepgram: 'bg-indigo-500/10 text-indigo-400'
+  openai: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
+  anthropic: 'bg-orange-500/10 text-orange-400 border-orange-500/20',
+  google: 'bg-blue-500/10 text-blue-400 border-blue-500/20',
+  nvidia_nim: 'bg-purple-500/10 text-purple-400 border-purple-500/20',
+  deepgram: 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20'
 }
 
 export default function Catalogue() {
@@ -25,6 +27,8 @@ export default function Catalogue() {
   const [searchQuery, setSearchQuery] = useState('')
   const [searchParams] = useSearchParams()
   const categoryFilter = searchParams.get('category') ?? ''
+
+  const [activeProvider, setActiveProvider] = useState<string | null>(null)
 
   const connectedProviders = useAppStore((s) => s.connectedProviders)
   const navigate = useNavigate()
@@ -47,17 +51,18 @@ export default function Catalogue() {
   const filtered = useMemo(() => {
     let list = models
     if (categoryFilter) list = list.filter((m) => m.category === categoryFilter)
+    if (activeProvider) list = list.filter((m) => m.provider_id === activeProvider)
+
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase()
       list = list.filter(
         (m) =>
           m.name.toLowerCase().includes(q) ||
-          m.id.toLowerCase().includes(q) ||
-          m.provider_id.toLowerCase().includes(q)
+          m.id.toLowerCase().includes(q)
       )
     }
     return list
-  }, [models, categoryFilter, searchQuery])
+  }, [models, categoryFilter, searchQuery, activeProvider])
 
   const handleModelClick = (model: RegistryModel) => {
     navigate(`/test/${encodeURIComponent(model.id)}`, { state: { providerId: model.provider_id } })
@@ -67,81 +72,146 @@ export default function Catalogue() {
     <div className="h-full overflow-y-auto p-8">
       <div className="max-w-5xl mx-auto animate-fade-in">
         {/* Header */}
-        <div className="flex items-end justify-between gap-4 mb-6">
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight mb-1">Model Catalogue</h1>
-            <p className="text-sm text-text-muted">
-              {categoryFilter
-                ? `Showing ${CATEGORY_LABELS[categoryFilter] ?? categoryFilter} models`
-                : 'Browse all available AI models across providers.'}
-            </p>
+        <div className="flex flex-col gap-6 mb-8">
+          <div className="flex items-start justify-between">
+            <div>
+              <h1 className="text-3xl font-bold tracking-tight mb-2">Model Catalogue</h1>
+              <p className="text-sm text-text-muted">
+                Browse and test available AI models across your connected providers.
+              </p>
+            </div>
+            <div className="flex items-center gap-2 bg-elevated border border-border-subtle rounded-xl px-4 py-2.5 shrink-0 focus-within:border-primary/50 transition-all shadow-sm">
+              <Search className="w-4.5 h-4.5 text-text-muted" />
+              <input
+                type="text"
+                placeholder="Search models..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="bg-transparent border-none outline-none text-sm w-56 text-text placeholder:text-text-muted"
+              />
+            </div>
           </div>
-          <div className="flex items-center gap-2 bg-elevated border border-border-subtle rounded-lg px-3 py-2 shrink-0 focus-within:border-primary/50 transition-colors">
-            <Search className="w-4 h-4 text-text-muted" />
-            <input
-              type="text"
-              placeholder="Search models..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="bg-transparent border-none outline-none text-sm w-48 text-text placeholder:text-text-muted"
-            />
+
+          {/* Provider Filter Bar */}
+          <div className="flex flex-wrap gap-2.5">
+            <button
+              onClick={() => setActiveProvider(null)}
+              className={cn(
+                "px-4 py-2 rounded-xl text-sm font-semibold transition-all border",
+                activeProvider === null
+                  ? "bg-primary text-white border-primary shadow-glow"
+                  : "bg-surface text-text-secondary border-border hover:border-gray-500"
+              )}
+            >
+              All Models
+            </button>
+            {PROVIDER_CONFIG.map((p) => {
+              const isConnected = connectedProviders.includes(p.id)
+              const isActive = activeProvider === p.id
+              return (
+                <button
+                  key={p.id}
+                  onClick={() => setActiveProvider(p.id)}
+                  className={cn(
+                    "flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all border group",
+                    isActive
+                      ? PROVIDER_COLORS[p.id] + " border-current shadow-lg shadow-current/5"
+                      : "bg-surface text-text-secondary border-border hover:border-gray-500"
+                  )}
+                >
+                  <div className={cn(
+                    "w-2 h-2 rounded-full",
+                    isConnected ? "bg-success shadow-[0_0_8px_rgba(34,197,94,0.5)]" : "bg-gray-500"
+                  )} />
+                  {p.label}
+                </button>
+              )
+            })}
           </div>
         </div>
 
-        {/* Model cards */}
+        {/* List Content */}
         {loading ? (
-          <div className="flex items-center justify-center py-20 text-text-muted text-sm">
-            Loading models...
+          <div className="flex flex-col items-center justify-center py-32 text-text-muted animate-pulse">
+            <div className="w-8 h-8 rounded-full border-2 border-primary border-t-transparent animate-spin mb-4" />
+            <p className="text-sm">Fetching catalogue...</p>
           </div>
         ) : filtered.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-20 text-text-muted">
-            <Sparkles className="w-8 h-8 mb-3 opacity-30" />
-            <p className="text-sm">No models found.</p>
+          <div className="flex flex-col items-center justify-center py-32 text-text-muted bg-surface/50 rounded-3xl border border-dashed border-border-subtle">
+            <Sparkles className="w-10 h-10 mb-4 opacity-10" />
+            <p className="text-sm font-medium">No matches found in this view.</p>
+            <button
+              onClick={() => { setActiveProvider(null); setSearchQuery(''); }}
+              className="mt-4 text-xs font-bold text-primary hover:underline"
+            >
+              Reset all filters
+            </button>
           </div>
         ) : (
-          <div className="space-y-1.5">
+          <div className="grid grid-cols-1 gap-2.5">
             {filtered.map((model) => {
               const ready = connectedProviders.includes(model.provider_id)
               return (
                 <button
                   key={`${model.id}-${model.category}`}
                   onClick={() => handleModelClick(model)}
-                  className="w-full flex items-center gap-4 px-4 py-3 rounded-xl bg-surface border border-border-subtle hover:border-primary/30 hover:bg-elevated transition-all duration-150 group text-left"
+                  className="w-full flex items-center gap-5 px-5 py-4 rounded-2xl bg-surface border border-border-subtle hover:border-primary/40 hover:bg-elevated/50 transition-all duration-200 group text-left shadow-sm hover:shadow-md"
                 >
-                  {/* Model name */}
+                  {/* Model Identity */}
                   <div className="flex-1 min-w-0">
-                    <div className="text-sm font-semibold text-text truncate">{model.name}</div>
-                    <div className="text-xs text-text-muted mt-0.5">{model.id}</div>
+                    <div className="flex items-center gap-2">
+                      <div className="text-[15px] font-bold text-text truncate group-hover:text-primary transition-colors">
+                        {model.name}
+                      </div>
+                      {model.category === 'code_generation' && (
+                        <span className="text-[9px] font-black uppercase px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-500 border border-blue-500/20">
+                          Code
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-[11px] font-mono text-text-muted mt-0.5 opacity-60 truncate">
+                      {model.id}
+                    </div>
                   </div>
 
-                  {/* Provider chip */}
-                  <span
-                    className={`text-[11px] font-semibold px-2.5 py-1 rounded-full capitalize ${PROVIDER_COLORS[model.provider_id] ?? 'bg-elevated text-text-muted'}`}
-                  >
-                    {model.provider_id}
-                  </span>
-
-                  {/* Category badge */}
-                  <span className="text-[11px] font-medium px-2.5 py-1 rounded-full bg-elevated text-text-secondary">
-                    {CATEGORY_LABELS[model.category] ?? model.category}
-                  </span>
-
-                  {/* Status */}
-                  <div className="w-20 text-right">
-                    {ready ? (
-                      <span className="inline-flex items-center gap-1 text-xs font-medium text-success">
-                        <span className="w-1.5 h-1.5 rounded-full bg-success" />
-                        Ready
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center gap-1 text-xs font-medium text-text-muted">
-                        <Key className="w-3 h-3" />
-                        Need key
-                      </span>
+                  {/* Features */}
+                  <div className="hidden sm:flex items-center gap-1.5">
+                    {model.supported_features?.includes('vision') && (
+                      <div className="w-7 h-7 flex items-center justify-center rounded-lg bg-green-500/5 text-green-500 border border-green-500/10" title="Vision Capable">
+                        <Sparkles className="w-3.5 h-3.5" />
+                      </div>
+                    )}
+                    {model.supported_features?.includes('thinking') && (
+                      <div className="w-7 h-7 flex items-center justify-center rounded-lg bg-purple-500/5 text-purple-500 border border-purple-500/10" title="Reasoning/Thinking">
+                        <Brain className="w-3.5 h-3.5" />
+                      </div>
                     )}
                   </div>
 
-                  <ChevronRight className="w-4 h-4 text-text-muted opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
+                  {/* Provider Info */}
+                  <div className="flex flex-col items-end gap-1 min-w-[100px]">
+                    <span className={cn(
+                      "text-[10px] font-bold px-2 py-0.5 rounded-md uppercase tracking-wider border",
+                      PROVIDER_COLORS[model.provider_id] || "bg-elevated border-border"
+                    )}>
+                      {model.provider_id.replace('_nim', '')}
+                    </span>
+                    {ready ? (
+                      <div className="flex items-center gap-1.5 text-[11px] font-bold text-success/80">
+                        <div className="w-1.5 h-1.5 rounded-full bg-success animate-pulse" />
+                        Online
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-1.5 text-[11px] font-bold text-text-muted/60">
+                        <Key className="w-3 h-3" />
+                        Locked
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="w-8 h-8 rounded-full bg-elevated flex items-center justify-center group-hover:bg-primary/10 group-hover:text-primary transition-all">
+                    <ChevronRight className="w-4 h-4" />
+                  </div>
                 </button>
               )
             })}

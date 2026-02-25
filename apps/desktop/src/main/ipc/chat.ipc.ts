@@ -26,6 +26,7 @@ export function registerChatHandlers() {
     messages: { role: string; content: string }[]
     params: Record<string, any>
   }) => {
+    console.log(`[Chat:Send] modelId="${request.modelId}" providerId="${request.providerId}" convId="${request.conversationId}"`)
     const emitter = new ChatEmitter(event.sender)
 
     try {
@@ -65,6 +66,17 @@ export function registerChatHandlers() {
         }
       } catch (e) {
         console.error('Memory injection failed:', e)
+      }
+
+      // Context window management — trim if over budget
+      const totalTokens = messages.reduce((sum, m) => sum + Math.ceil(m.content.length / 4), 0)
+      const contextLimit = request.params.contextWindow || 128000
+      if (totalTokens > contextLimit * 0.9) {
+        const system = messages.filter((m) => m.role === 'system')
+        const nonSystem = messages.filter((m) => m.role !== 'system')
+        const kept = nonSystem.slice(-10)
+        messages = [...system, ...kept]
+        console.log(`Context trimmed: ${totalTokens} tokens → kept system + last ${kept.length} messages`)
       }
 
       await adapter.execute(
@@ -112,15 +124,21 @@ export function registerChatHandlers() {
         const userMsgCount = db.prepare(
           "SELECT COUNT(*) as cnt FROM messages WHERE conversation_id = ? AND role = 'user'"
         ).get(request.conversationId) as { cnt: number }
+        console.log(`[Memory] Conversation ${request.conversationId}: ${userMsgCount.cnt} user messages`)
         if (userMsgCount.cnt >= 5) {
           const convMeta = db.prepare('SELECT settings_json FROM conversations WHERE id = ?').get(request.conversationId) as { settings_json: string } | undefined
           const settings = convMeta?.settings_json ? JSON.parse(convMeta.settings_json) : {}
           if (!settings._memoryExtracted) {
+            console.log('[Memory] Triggering auto-extraction for conversation:', request.conversationId)
             settings._memoryExtracted = true
             db.prepare('UPDATE conversations SET settings_json = ? WHERE id = ?')
               .run(JSON.stringify(settings), request.conversationId)
             // Fire and forget
             extractMemories(request.conversationId, request.providerId, request.modelId)
+              .then((saved) => console.log(`[Memory] Extracted ${saved.length} memories`))
+              .catch((err) => console.error('[Memory] Extraction failed:', err))
+          } else {
+            console.log('[Memory] Skipping extraction — already extracted for this conversation')
           }
         }
       } catch (e) {

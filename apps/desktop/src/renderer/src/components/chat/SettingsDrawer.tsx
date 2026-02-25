@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
-import { X } from 'lucide-react'
+import { createPortal } from 'react-dom'
+import { X, Info } from 'lucide-react'
 import type { ConversationSettings } from '@dexterai/registry-types'
 
 interface SettingsDrawerProps {
@@ -13,7 +14,7 @@ interface SettingsDrawerProps {
 const DEFAULTS: ConversationSettings = {
   systemPrompt: 'You are a helpful AI assistant.',
   temperature: 0.7,
-  maxTokens: 2048
+  maxTokens: 8192
 }
 
 export default function SettingsDrawer({
@@ -24,16 +25,54 @@ export default function SettingsDrawer({
   onSave
 }: SettingsDrawerProps) {
   const [local, setLocal] = useState<ConversationSettings>({ ...DEFAULTS, ...settings })
+  const [maxTokensText, setMaxTokensText] = useState(String(settings.maxTokens ?? DEFAULTS.maxTokens))
+  const [showTooltip, setShowTooltip] = useState(false)
+  const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 })
 
   useEffect(() => {
-    setLocal({ ...DEFAULTS, ...settings })
+    const merged = { ...DEFAULTS, ...settings }
+    setLocal(merged)
+    setMaxTokensText(String(merged.maxTokens ?? DEFAULTS.maxTokens))
   }, [conversationId, open])
+
+  const handleMaxTokensChange = (value: string) => {
+    // Allow the user to type freely without resetting
+    setMaxTokensText(value)
+    const parsed = parseInt(value)
+    if (!isNaN(parsed) && parsed > 0) {
+      setLocal({ ...local, maxTokens: Math.min(parsed, 128000) })
+    }
+  }
+
+  const handleMaxTokensBlur = () => {
+    // On blur, normalize the value
+    const parsed = parseInt(maxTokensText)
+    if (isNaN(parsed) || parsed < 1) {
+      setMaxTokensText(String(DEFAULTS.maxTokens))
+      setLocal({ ...local, maxTokens: DEFAULTS.maxTokens })
+    } else {
+      const clamped = Math.min(Math.max(parsed, 1), 128000)
+      setMaxTokensText(String(clamped))
+      setLocal({ ...local, maxTokens: clamped })
+    }
+  }
 
   const handleSave = async () => {
     onSave(local)
-    await window.dexterai.conversations.update(conversationId, {
-      settings_json: JSON.stringify(local)
-    })
+    // Merge with existing settings_json to preserve internal flags (e.g. _memoryExtracted)
+    try {
+      const conv = await window.dexterai.conversations.get(conversationId)
+      const existing = conv?.settings_json ? JSON.parse(conv.settings_json) : {}
+      const merged = { ...existing, ...local }
+      await window.dexterai.conversations.update(conversationId, {
+        settings_json: JSON.stringify(merged)
+      })
+    } catch (e) {
+      // Fallback: just save local
+      await window.dexterai.conversations.update(conversationId, {
+        settings_json: JSON.stringify(local)
+      })
+    }
     onClose()
   }
 
@@ -41,7 +80,7 @@ export default function SettingsDrawer({
 
   return (
     <div className="absolute inset-y-0 right-0 w-80 bg-surface border-l border-border shadow-xl z-40 flex flex-col">
-      <div className="flex items-center justify-between px-4 py-3 border-b border-border shrink-0">
+      <div className="h-14 flex items-center justify-between px-4 border-b border-border shrink-0">
         <h3 className="text-sm font-semibold text-text">Chat Settings</h3>
         <button
           onClick={onClose}
@@ -51,78 +90,161 @@ export default function SettingsDrawer({
         </button>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-4 space-y-5">
-        {/* System Prompt */}
-        <div>
-          <label className="text-xs font-medium text-text-secondary block mb-1.5">
-            System Prompt
-          </label>
-          <textarea
-            value={local.systemPrompt || ''}
-            onChange={(e) => setLocal({ ...local, systemPrompt: e.target.value })}
-            rows={4}
-            className="w-full text-sm border border-border rounded-lg px-3 py-2 bg-background text-text resize-none focus:outline-none focus:ring-1 focus:ring-primary"
-          />
-        </div>
+      {/* Drawer Content */}
+      <div className="flex-1 overflow-y-auto overflow-x-visible relative">
+        {/* Settings Container */}
+        <div className="p-4 space-y-6">
+          {/* System Prompt */}
+          <div>
+            <label className="text-xs font-medium text-text-secondary block mb-1.5">
+              System Prompt
+            </label>
+            <textarea
+              value={local.systemPrompt || ''}
+              onChange={(e) => setLocal({ ...local, systemPrompt: e.target.value })}
+              rows={4}
+              className="w-full text-sm border border-border rounded-lg px-3 py-2 bg-background text-text resize-none focus:outline-none focus:ring-1 focus:ring-primary"
+            />
+            <p className="text-[10px] text-gray-400 mt-1">
+              Sets the AI's personality and behavior. E.g., "You are a senior React developer."
+            </p>
+          </div>
 
-        {/* Temperature */}
-        <div>
-          <label className="text-xs font-medium text-text-secondary block mb-1.5">
-            Temperature: {local.temperature?.toFixed(1)}
-          </label>
-          <input
-            type="range"
-            min="0"
-            max="2"
-            step="0.1"
-            value={local.temperature ?? 0.7}
-            onChange={(e) => setLocal({ ...local, temperature: parseFloat(e.target.value) })}
-            className="w-full accent-primary"
-          />
-          <div className="flex justify-between text-[10px] text-gray-400 mt-0.5">
-            <span>Precise</span>
-            <span>Creative</span>
+          {/* Temperature */}
+          <div>
+            <div className="flex items-center gap-1.5 mb-1.5">
+              <label className="text-xs font-medium text-text-secondary">
+                Temperature: {local.temperature?.toFixed(1)}
+              </label>
+              <div
+                className="relative"
+                onMouseEnter={(e) => {
+                  const rect = e.currentTarget.getBoundingClientRect();
+                  setTooltipPos({ x: rect.right, y: rect.top });
+                  setShowTooltip(true);
+                }}
+                onMouseLeave={() => setShowTooltip(false)}
+              >
+                <Info className="w-3.5 h-3.5 text-gray-400 cursor-help" />
+              </div>
+            </div>
+            <input
+              type="range"
+              min="0"
+              max="2"
+              step="0.1"
+              value={local.temperature ?? 0.7}
+              onChange={(e) => setLocal({ ...local, temperature: parseFloat(e.target.value) })}
+              className="w-full accent-primary"
+            />
+            <div className="flex justify-between text-[10px] text-gray-400 mt-0.5">
+              <span>Precise (0)</span>
+              <span>Balanced (0.7)</span>
+              <span>Creative (2)</span>
+            </div>
+          </div>
+
+          {/* Max Tokens */}
+          <div>
+            <label className="text-xs font-medium text-text-secondary block mb-1.5">
+              Max Output Tokens
+            </label>
+            <input
+              type="text"
+              inputMode="numeric"
+              value={maxTokensText}
+              onChange={(e) => handleMaxTokensChange(e.target.value)}
+              onBlur={handleMaxTokensBlur}
+              className="w-full text-sm border border-border rounded-lg px-3 py-2 bg-background text-text focus:outline-none focus:ring-1 focus:ring-primary"
+            />
+            <p className="text-[10px] text-gray-400 mt-1">
+              1 token ≈ ¾ of a word. Set 4096 for short replies, 8192 for code, up to 128000 for very long outputs. Higher values cost more.
+            </p>
+          </div>
+
+          {/* Memory Toggle */}
+          <div className="flex items-center justify-between">
+            <div>
+              <label className="text-xs font-medium text-text-secondary">
+                Inject memories
+              </label>
+              <p className="text-[10px] text-gray-400 mt-0.5">
+                Auto-extracted after 5+ messages
+              </p>
+            </div>
+            <button
+              onClick={() => setLocal({ ...local, memoryEnabled: !(local.memoryEnabled !== false) })}
+              className={`w-9 h-5 rounded-full transition-colors relative ${local.memoryEnabled !== false ? 'bg-primary' : 'bg-gray-300 dark:bg-gray-600'}`}
+            >
+              <span
+                className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${local.memoryEnabled !== false ? 'left-[18px]' : 'left-0.5'}`}
+              />
+            </button>
           </div>
         </div>
 
-        {/* Max Tokens */}
-        <div>
-          <label className="text-xs font-medium text-text-secondary block mb-1.5">
-            Max Tokens
-          </label>
-          <input
-            type="number"
-            min="1"
-            max="128000"
-            value={local.maxTokens ?? 2048}
-            onChange={(e) => setLocal({ ...local, maxTokens: parseInt(e.target.value) || 2048 })}
-            className="w-full text-sm border border-border rounded-lg px-3 py-2 bg-background text-text focus:outline-none focus:ring-1 focus:ring-primary"
-          />
-        </div>
-
-        {/* Memory Toggle */}
-        <div className="flex items-center justify-between">
-          <label className="text-xs font-medium text-text-secondary">
-            Inject memories
-          </label>
-          <button
-            onClick={() => setLocal({ ...local, memoryEnabled: !(local.memoryEnabled !== false) })}
-            className={`w-9 h-5 rounded-full transition-colors relative ${local.memoryEnabled !== false ? 'bg-primary' : 'bg-gray-300 dark:bg-gray-600'}`}
+        {/* Temperature Tooltip Portal */}
+        {showTooltip && createPortal(
+          <div
+            className="fixed z-[9999]"
+            style={{ top: tooltipPos.y - 8, right: window.innerWidth - tooltipPos.x + 4 }}
+            onMouseEnter={() => setShowTooltip(true)}
+            onMouseLeave={() => setShowTooltip(false)}
           >
-            <span
-              className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${local.memoryEnabled !== false ? 'left-[18px]' : 'left-0.5'}`}
-            />
+            <div className="-translate-y-full">
+              <div className="bg-[#2a2a2e] rounded-xl shadow-2xl border border-white/10 overflow-hidden w-64">
+                <table className="w-full text-[11px]">
+                  <thead>
+                    <tr className="border-b border-white/10">
+                      <th className="text-left text-white font-semibold px-3 py-2">Value</th>
+                      <th className="text-left text-white font-semibold px-3 py-2">Behavior</th>
+                      <th className="text-left text-white font-semibold px-3 py-2">Best For</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr className="border-b border-white/5">
+                      <td className="px-3 py-1.5 font-bold" style={{ color: '#4ade80' }}>0.0</td>
+                      <td className="px-3 py-1.5 text-gray-300">Deterministic</td>
+                      <td className="px-3 py-1.5 text-gray-300">Code, factual Q&A</td>
+                    </tr>
+                    <tr className="border-b border-white/5">
+                      <td className="px-3 py-1.5 font-bold" style={{ color: '#facc15' }}>0.3–0.5</td>
+                      <td className="px-3 py-1.5 text-gray-300">Focused</td>
+                      <td className="px-3 py-1.5 text-gray-300">Technical writing</td>
+                    </tr>
+                    <tr className="border-b border-white/5">
+                      <td className="px-3 py-1.5 font-bold" style={{ color: '#facc15' }}>0.7</td>
+                      <td className="px-3 py-1.5 text-gray-300">Balanced</td>
+                      <td className="px-3 py-1.5 text-gray-300">General chat</td>
+                    </tr>
+                    <tr className="border-b border-white/5">
+                      <td className="px-3 py-1.5 font-bold" style={{ color: '#d97706' }}>1.0–1.5</td>
+                      <td className="px-3 py-1.5 text-gray-300">Creative</td>
+                      <td className="px-3 py-1.5 text-gray-300">Brainstorming</td>
+                    </tr>
+                    <tr>
+                      <td className="px-3 py-1.5 font-bold" style={{ color: '#ef4444' }}>2.0</td>
+                      <td className="px-3 py-1.5 text-gray-300">Random</td>
+                      <td className="px-3 py-1.5 text-gray-300">Experimental only</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              {/* Arrow */}
+              <div className="absolute right-[11px] -bottom-1.5 w-3 h-3 bg-[#2a2a2e] rotate-45 border-r border-b border-white/10" />
+            </div>
+          </div>,
+          document.body
+        )}
+
+        <div className="p-4 border-t border-border shrink-0 z-10 bg-surface">
+          <button
+            onClick={handleSave}
+            className="w-full py-2 text-sm font-medium bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors"
+          >
+            Save Settings
           </button>
         </div>
-      </div>
-
-      <div className="p-4 border-t border-border shrink-0">
-        <button
-          onClick={handleSave}
-          className="w-full py-2 text-sm font-medium bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors"
-        >
-          Save Settings
-        </button>
       </div>
     </div>
   )

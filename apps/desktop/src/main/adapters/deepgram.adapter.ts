@@ -111,6 +111,7 @@ export class DeepgramAdapter extends BaseProviderAdapter {
                 promptTokens: 0,
                 completionTokens: Math.round(result?.metadata?.duration || 0), // Hack: store duration in completionTokens for DB
                 finishReason: 'stop',
+                resolvedModel: request.modelId,
                 ...{ // Extended result payload expected by ASRWorkspace
                     result: {
                         text,
@@ -197,6 +198,7 @@ export class DeepgramAdapter extends BaseProviderAdapter {
                 promptTokens: text.length,
                 completionTokens: 0,
                 finishReason: 'stop',
+                resolvedModel: request.modelId,
                 result: {
                     audioPath,
                     charCount: text.length,

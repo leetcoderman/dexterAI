@@ -63,6 +63,7 @@ export interface ProviderCredentials {
 export interface VerifyResult {
     success: boolean;
     error?: Omit<ProviderError, 'requestId'>;
+    accessibleModels?: string[];
 }
 
 // IPC Contracts
@@ -77,6 +78,7 @@ export interface TestRequest {
 export interface StreamChunk {
     requestId: string;
     text?: string;
+    thought?: string;
 }
 
 export interface EvaluationMetrics {
@@ -87,6 +89,7 @@ export interface EvaluationMetrics {
     completionTokens: number;
     finishReason?: string;
     cacheReadTokens?: number;
+    resolvedModel?: string;
 }
 
 export interface ProviderError {

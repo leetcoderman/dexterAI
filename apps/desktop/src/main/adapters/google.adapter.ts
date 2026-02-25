@@ -7,19 +7,29 @@ export class GoogleAdapter extends BaseProviderAdapter {
 
     async verify(credentials: ProviderCredentials): Promise<VerifyResult> {
         try {
-            const genAI = new GoogleGenerativeAI(credentials.apiKey);
-            // Verify by attempting to instantiate a model and listing an arbitrary endpoint, or simply running a tiny generation.
-            // Generative AI SDK doesn't have a pure "verify" endpoint, so we will do a tiny generation request.
-            // Using 3 flash preview as it is known to exist.
-            const model = genAI.getGenerativeModel({ model: 'gemini-3-flash-preview' });
-            await model.generateContent({
-                contents: [{ role: 'user', parts: [{ text: 'hi' }] }],
-                generationConfig: { maxOutputTokens: 1 }
-            });
-
-            return { success: true };
+            const res = await fetch(
+                `https://generativelanguage.googleapis.com/v1beta/models?key=${credentials.apiKey}`
+            );
+            if (!res.ok) {
+                const status = res.status;
+                if (status === 403 || status === 401 || status === 400) {
+                    return { success: false, error: { code: 'INVALID_KEY', message: 'Invalid or unauthorized Google API Key', isRetryable: false } };
+                }
+                return {
+                    success: false,
+                    error: {
+                        code: 'PROVIDER_ERROR',
+                        message: `Google API Error: HTTP ${status}`,
+                        isRetryable: this.isRetryable(status)
+                    }
+                };
+            }
+            const data = await res.json();
+            const accessibleModels: string[] = (data.models || [])
+                .map((m: any) => (m.name || '').replace('models/', ''))
+                .filter(Boolean);
+            return { success: true, accessibleModels };
         } catch (e: any) {
-            // Google API throws specific error codes for auth
             if (e.message?.includes('API key not valid') || e.status === 403 || e.status === 401) {
                 return { success: false, error: { code: 'INVALID_KEY', message: 'Invalid or unauthorized Google API Key', isRetryable: false } };
             }
@@ -79,7 +89,7 @@ export class GoogleAdapter extends BaseProviderAdapter {
 
             const generationConfig: GenerationConfig = {
                 temperature: Number(params.temperature ?? 0.7),
-                maxOutputTokens: Number(params.maxTokens ?? 1024),
+                maxOutputTokens: Number(params.maxTokens ?? 8192),
                 topP: Number(params.topP ?? 1),
             };
 
@@ -115,11 +125,17 @@ export class GoogleAdapter extends BaseProviderAdapter {
                 }
 
                 const chunkText = chunk.text();
+                // Google "Thinking" models often put the thought in a specific part if available.
+                // The current SDK might consolidate them into text() or have a separate field.
+                // We'll treat standard text as text, but if we detect bracketed thoughts or specific fields, we handle them.
+                const thought = (chunk as any).thought || '';
+
                 accumulatedText += chunkText;
 
                 emitter.emit('test:chunk', {
                     requestId: request.requestId,
-                    text: chunkText
+                    text: chunkText,
+                    thought: thought
                 });
 
                 if (chunk.promptFeedback) {
@@ -132,6 +148,7 @@ export class GoogleAdapter extends BaseProviderAdapter {
             }
 
             const response = await resultStream.response;
+            const resolvedModel = (response as any).modelVersion || '';
 
             if (response.usageMetadata) {
                 promptTokens = response.usageMetadata.promptTokenCount;
@@ -148,7 +165,8 @@ export class GoogleAdapter extends BaseProviderAdapter {
                 totalTime,
                 promptTokens,
                 completionTokens,
-                finishReason
+                finishReason,
+                resolvedModel
             });
 
         } catch (e: any) {

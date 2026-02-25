@@ -1,4 +1,4 @@
-import { contextBridge, ipcRenderer } from 'electron';
+import { contextBridge, ipcRenderer, webFrame } from 'electron';
 import {
   VerifyResult,
   TestRequest,
@@ -22,7 +22,7 @@ interface DexteraiAPI {
     save(providerId: string, key: string, extras?: Record<string, string>): Promise<void>;
     delete(providerId: string): Promise<void>;
     exists(providerId: string): Promise<boolean>;
-    listConnected(): Promise<string[]>;
+    listConnected(): Promise<{ providers: string[]; models: string[] }>;
   };
   provider: {
     verify(providerId: string, modelId: string): Promise<VerifyResult>;
@@ -46,6 +46,12 @@ interface DexteraiAPI {
   };
   files: {
     openAudioPicker(): Promise<{ path: string; name: string } | null>;
+    saveFile(args: {
+      content: string | Buffer | Uint8Array;
+      title: string;
+      defaultName: string;
+      filters: Electron.FileFilter[];
+    }): Promise<{ success: boolean; filePath?: string; error?: string }>;
   };
 
   conversations: {
@@ -92,6 +98,10 @@ interface DexteraiAPI {
   settings: {
     deleteData(mode: 'chat' | 'keys_analytics' | 'everything'): Promise<{ success: boolean; error?: string }>;
   };
+  zoom: {
+    setFactor(factor: number): void;
+    getFactor(): number;
+  };
 
   on(channel: 'test:chunk', handler: (chunk: StreamChunk) => void): UnsubscribeFn;
   on(channel: 'test:done', handler: (metrics: EvaluationMetrics) => void): UnsubscribeFn;
@@ -132,7 +142,8 @@ const api: DexteraiAPI = {
     delete: (templateId) => ipcRenderer.invoke('templates:delete', templateId)
   },
   files: {
-    openAudioPicker: () => ipcRenderer.invoke('files:openAudioPicker')
+    openAudioPicker: () => ipcRenderer.invoke('files:openAudioPicker'),
+    saveFile: (args) => ipcRenderer.invoke('files:saveFile', args)
   },
   conversations: {
     list: () => ipcRenderer.invoke('conversations:list'),
@@ -162,6 +173,10 @@ const api: DexteraiAPI = {
   },
   settings: {
     deleteData: (mode) => ipcRenderer.invoke('settings:deleteData', mode)
+  },
+  zoom: {
+    setFactor: (factor: number) => webFrame.setZoomFactor(factor),
+    getFactor: () => webFrame.getZoomFactor()
   },
 
   on: (channel: string, callback: (...args: any[]) => void) => {

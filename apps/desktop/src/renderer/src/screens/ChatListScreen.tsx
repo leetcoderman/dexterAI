@@ -73,20 +73,8 @@ export default function ChatListScreen() {
   const isSearching = search.trim().length > 0
 
   return (
-    <div className="flex flex-col h-full">
-      <div className="px-6 py-3 border-b border-border bg-background shrink-0 flex items-center justify-between">
-        <h2 className="text-sm font-semibold text-text">Conversations</h2>
-        <button
-          onClick={handleNewChat}
-          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors"
-        >
-          <Plus className="w-3.5 h-3.5" />
-          New Chat
-        </button>
-      </div>
-
-      {/* Search */}
-      <div className="px-4 pt-3 pb-1 shrink-0">
+    <div className="flex flex-col h-full pt-2">
+      <div className="px-4 pb-1 shrink-0">
         <div className="relative">
           <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
           <input

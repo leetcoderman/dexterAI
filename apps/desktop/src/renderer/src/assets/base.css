@@ -41,7 +41,9 @@
     margin: 0;
   }
 
-  html, body, #root {
+  html,
+  body,
+  #root {
     height: 100%;
     width: 100%;
     overflow: hidden;
@@ -55,6 +57,13 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     line-height: 1.5;
+    /* user-select: none removed to allow global selection */
+  }
+
+  /* Make sure buttons and icons are still non-selectable for a native feel */
+  button,
+  .no-select,
+  .drag-region {
     user-select: none;
   }
 
@@ -63,21 +72,31 @@
     width: 6px;
     height: 6px;
   }
+
   ::-webkit-scrollbar-track {
     background: transparent;
   }
+
   ::-webkit-scrollbar-thumb {
     background: #2a2b30;
     border-radius: 3px;
   }
+
   ::-webkit-scrollbar-thumb:hover {
     background: #3a3b40;
   }
 
   /* Selection */
   ::selection {
-    background: rgba(88, 101, 242, 0.3);
+    background: rgba(88, 101, 242, 0.4);
     color: #f2f3f5;
+  }
+
+  /* High-contrast selection for inputs and textareas */
+  input::selection,
+  textarea::selection {
+    background: #000000 !important;
+    color: #ffffff !important;
   }
 
   /* Focus ring utility */
@@ -88,60 +107,64 @@
 }
 
 @layer components {
+
   /* Reusable card surface */
   .card {
     @apply bg-surface rounded-xl border border-border;
   }
+
   .card-elevated {
     @apply bg-elevated rounded-xl border border-border-subtle;
   }
 
   /* Buttons */
   .btn-primary {
-    @apply px-4 py-2 bg-primary text-white font-medium rounded-lg
-           hover:bg-primary-hover active:translate-y-px transition-all duration-150;
+    @apply px-4 py-2 bg-primary text-white font-medium rounded-lg hover:bg-primary-hover active:translate-y-px transition-all duration-150;
   }
+
   .btn-secondary {
-    @apply px-4 py-2 bg-elevated text-text-secondary font-medium rounded-lg border border-border
-           hover:bg-overlay hover:text-text active:translate-y-px transition-all duration-150;
+    @apply px-4 py-2 bg-elevated text-text-secondary font-medium rounded-lg border border-border hover:bg-overlay hover:text-text active:translate-y-px transition-all duration-150;
   }
+
   .btn-danger {
-    @apply px-4 py-2 bg-[rgba(237,66,69,0.1)] text-danger font-medium rounded-lg border border-[rgba(237,66,69,0.2)]
-           hover:bg-[rgba(237,66,69,0.2)] active:translate-y-px transition-all duration-150;
+    @apply px-4 py-2 bg-[#ed4245]/10 text-danger font-medium rounded-lg border border-[#ed4245]/20 hover:bg-[#ed4245]/20 active:translate-y-px transition-all duration-150;
   }
+
   .btn-ghost {
-    @apply px-3 py-1.5 text-text-muted rounded-lg
-           hover:bg-elevated hover:text-text-secondary transition-all duration-150;
+    @apply px-3 py-1.5 text-text-muted rounded-lg hover:bg-elevated hover:text-text-secondary transition-all duration-150;
   }
 
   /* Input fields */
   .input {
-    @apply w-full bg-input-bg border border-input-border rounded-lg px-3 py-2 text-sm text-text
-           placeholder:text-text-muted focus:outline-none focus:border-primary focus:ring-1 focus:ring-[rgba(88,101,242,0.3)]
-           transition-colors duration-150;
+    @apply w-full bg-input-bg border border-input-border rounded-lg px-3 py-2 text-sm text-text placeholder:text-text-muted focus:outline-none focus:border-primary focus:ring-1 focus:ring-[#5865f2]/30 transition-colors duration-150;
   }
 
   /* Badge/pill */
   .badge {
     @apply inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium;
   }
+
   .badge-primary {
-    @apply badge bg-[rgba(88,101,242,0.15)] text-primary;
+    @apply badge bg-[#5865f2]/15 text-primary;
   }
+
   .badge-success {
-    @apply badge bg-[rgba(35,165,90,0.15)] text-success;
+    @apply badge bg-[#23a55a]/15 text-success;
   }
+
   .badge-warning {
-    @apply badge bg-[rgba(240,178,50,0.15)] text-warning;
+    @apply badge bg-[#f0b232]/15 text-warning;
   }
+
   .badge-danger {
-    @apply badge bg-[rgba(237,66,69,0.15)] text-danger;
+    @apply badge bg-[#ed4245]/15 text-danger;
   }
 
   /* Drag region for Electron title bar */
   .drag-region {
     -webkit-app-region: drag;
   }
+
   .no-drag {
     -webkit-app-region: no-drag;
   }

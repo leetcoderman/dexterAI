@@ -9,6 +9,7 @@ export default function Connection() {
     const connectedProviders = useAppStore(state => state.connectedProviders);
     const addConnectedProvider = useAppStore(state => state.addConnectedProvider);
     const removeConnectedProvider = useAppStore(state => state.removeConnectedProvider);
+    const syncConnectedProviders = useAppStore(state => state.syncConnectedProviders);
 
     const [apiKey, setApiKey] = useState('');
     const [isVerifying, setIsVerifying] = useState(false);
@@ -31,6 +32,7 @@ export default function Connection() {
 
             if (result?.success) {
                 addConnectedProvider(providerId);
+                await syncConnectedProviders();
                 setSuccessMsg('Successfully connected and verified.');
                 setApiKey('');
             } else {
@@ -52,6 +54,7 @@ export default function Connection() {
         try {
             const result = await window.dexterai.provider.verify(providerId, 'default');
             if (result?.success) {
+                await syncConnectedProviders();
                 setSuccessMsg('Credentials verified successfully.');
             } else {
                 setErrorMsg(result?.error?.message || 'Verification failed.');

@@ -29,10 +29,11 @@ export function registerProviderHandlers() {
                 // Insert into connections table so listConnected survives restarts
                 try {
                     const db = getDatabase();
+                    const modelIds = JSON.stringify(result.accessibleModels || []);
                     db.prepare(
                         `INSERT OR REPLACE INTO connections (provider_id, model_ids, connected_at, last_verified)
                          VALUES (?, ?, ?, ?)`
-                    ).run(providerId, '[]', Date.now(), Date.now());
+                    ).run(providerId, modelIds, Date.now(), Date.now());
                 } catch (dbErr) {
                     console.error('Failed to persist connection:', dbErr);
                 }

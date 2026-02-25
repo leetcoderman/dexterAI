@@ -32,7 +32,7 @@ export class OpenAIAdapter extends BaseProviderAdapter {
             client.chat.completions.create({
                 model: req.modelId,
                 messages: params.messages || [{ role: 'user', content: params.prompt }],
-                max_tokens: params.maxTokens || 1024,
+                max_tokens: params.maxTokens || 8192,
                 temperature: params.temperature,
                 stream: true,
             })
@@ -41,13 +41,21 @@ export class OpenAIAdapter extends BaseProviderAdapter {
         let promptTokens = 0;
         let completionTokens = 0;
         let finishReason = '';
+        let resolvedModel = '';
 
         for await (const chunk of stream) {
             if (!firstChunkTime) firstChunkTime = performance.now();
+            if (!resolvedModel && chunk.model) resolvedModel = chunk.model;
 
             const content = chunk.choices[0]?.delta?.content || '';
-            if (content) {
-                emitter.emit('test:chunk', { requestId: req.requestId, text: content });
+            const reasoning = (chunk.choices[0]?.delta as any)?.reasoning_content || '';
+
+            if (content || reasoning) {
+                emitter.emit('test:chunk', {
+                    requestId: req.requestId,
+                    text: content,
+                    thought: reasoning
+                });
             }
 
             if (chunk.choices[0]?.finish_reason) {
@@ -68,7 +76,8 @@ export class OpenAIAdapter extends BaseProviderAdapter {
             promptTokens: promptTokens,
             completionTokens: completionTokens,
             finishReason: finishReason,
-            cacheReadTokens: 0
+            cacheReadTokens: 0,
+            resolvedModel
         });
     }
 }

@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useParams } from 'react-router-dom'
-import { Loader2, Settings2 } from 'lucide-react'
+import { Loader2 } from 'lucide-react'
 import { useAppStore } from '../store'
 import ChatInput from '../components/chat/ChatInput'
 import MessageBubble from '../components/chat/MessageBubble'
@@ -14,26 +14,32 @@ export default function ChatScreen() {
     allModels,
     loadAllModels,
     connectedProviders,
+    connectedModels,
     selectedModelId,
     selectedProviderId,
     setSelectedModel,
-    loadConversations
+    loadConversations,
+    isChatSettingsOpen,
+    setIsChatSettingsOpen
   } = useAppStore()
 
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [isStreaming, setIsStreaming] = useState(false)
   const [loading, setLoading] = useState(true)
-  const [title, setTitle] = useState<string | null>(null)
-  const [isEditingTitle, setIsEditingTitle] = useState(false)
-  const [editTitle, setEditTitle] = useState('')
-  const [drawerOpen, setDrawerOpen] = useState(false)
   const [settings, setSettings] = useState<ConversationSettings>({})
 
   const requestIdRef = useRef<string | null>(null)
   const assistantMsgIdRef = useRef<string | null>(null)
   const accumulatedTextRef = useRef('')
+  const accumulatedThoughtRef = useRef('')
   const endOfMessagesRef = useRef<HTMLDivElement>(null)
   const settingsRef = useRef<ConversationSettings>({})
+
+  // v2.3 Streaming Buffer refs
+  const textBufferRef = useRef('')
+  const thoughtBufferRef = useRef('')
+  const statsRef = useRef({ startTime: 0, firstChunkTime: 0, tokensSent: 0 })
+  const drainIntervalRef = useRef<any>(null)
 
   // Load models once
   useEffect(() => {
@@ -49,7 +55,6 @@ export default function ChatScreen() {
       window.dexterai.conversations.get(conversationId)
     ]).then(([msgs, conv]) => {
       setMessages(msgs)
-      setTitle(conv?.title || null)
       const parsed = conv?.settings_json ? JSON.parse(conv.settings_json) : {}
       setSettings(parsed)
       settingsRef.current = parsed
@@ -64,43 +69,99 @@ export default function ChatScreen() {
 
   // IPC subscriptions — ref-based, registered once
   useEffect(() => {
+    // Start the buffer drainer loop
+    drainIntervalRef.current = setInterval(() => {
+      if (!requestIdRef.current || !assistantMsgIdRef.current) return
+
+      const textToDrain = textBufferRef.current.slice(0, 8) // Reveal up to 8 chars per tick
+      const thoughtToDrain = thoughtBufferRef.current.slice(0, 12)
+
+      if (textToDrain || thoughtToDrain) {
+        textBufferRef.current = textBufferRef.current.slice(textToDrain.length)
+        thoughtBufferRef.current = thoughtBufferRef.current.slice(thoughtToDrain.length)
+
+        accumulatedTextRef.current += textToDrain
+        accumulatedThoughtRef.current += thoughtToDrain
+
+        const now = Date.now()
+        const elapsed = (now - statsRef.current.startTime) / 1000
+        const tokensPerSec = elapsed > 0 ? (accumulatedTextRef.current.length / 4) / elapsed : 0
+
+        setMessages((prev) => {
+          const next = [...prev]
+          const idx = next.findIndex((m) => m.id === assistantMsgIdRef.current)
+          if (idx !== -1) {
+            const meta = next[idx].metadata_json ? JSON.parse(next[idx].metadata_json) : {}
+            next[idx] = {
+              ...next[idx],
+              content: accumulatedTextRef.current,
+              metadata_json: JSON.stringify({
+                ...meta,
+                thought: accumulatedThoughtRef.current,
+                speed: tokensPerSec.toFixed(1),
+                ttft: statsRef.current.firstChunkTime ? statsRef.current.firstChunkTime - statsRef.current.startTime : null,
+                isThinking: accumulatedThoughtRef.current.length > 0 && textBufferRef.current.length === 0 && accumulatedTextRef.current.length === 0
+              })
+            }
+          }
+          return next
+        })
+      }
+    }, 25) // 40fps smoothness
+
     const unsubChunk = window.dexterai.on('chat:chunk', (data) => {
       if (data.requestId !== requestIdRef.current) return
-      accumulatedTextRef.current += data.text ?? ''
-      const text = accumulatedTextRef.current
-      setMessages((prev) => {
-        const next = [...prev]
-        const idx = next.findIndex((m) => m.id === assistantMsgIdRef.current)
-        if (idx !== -1) {
-          next[idx] = { ...next[idx], content: text }
-        }
-        return next
-      })
+
+      if (!statsRef.current.firstChunkTime) {
+        statsRef.current.firstChunkTime = Date.now()
+      }
+
+      if (data.text) textBufferRef.current += data.text
+      if (data.thought) thoughtBufferRef.current += data.thought
     })
 
     const unsubDone = window.dexterai.on('chat:done', (data) => {
       if (data.requestId !== requestIdRef.current) return
+
+      // Flush any remains in buffer immediately
+      accumulatedTextRef.current += textBufferRef.current
+      accumulatedThoughtRef.current += thoughtBufferRef.current
+      textBufferRef.current = ''
+      thoughtBufferRef.current = ''
+
       const msgId = assistantMsgIdRef.current
       const finalText = accumulatedTextRef.current
+      const finalThought = accumulatedThoughtRef.current
 
       // Persist final content to DB
       if (msgId) {
+        const metadata = {
+          ttft: data.ttft,
+          totalTime: data.totalTime,
+          promptTokens: data.promptTokens,
+          completionTokens: data.completionTokens,
+          finishReason: data.finishReason,
+          resolvedModel: data.resolvedModel,
+          thought: finalThought
+        }
         window.dexterai.messages.update(msgId, {
           content: finalText,
           token_count: data.completionTokens || 0,
-          metadata_json: JSON.stringify({
-            ttft: data.ttft,
-            totalTime: data.totalTime,
-            promptTokens: data.promptTokens,
-            completionTokens: data.completionTokens,
-            finishReason: data.finishReason
-          })
+          metadata_json: JSON.stringify(metadata)
         })
+
+        // Update local state so MessageBubble shows resolvedModel immediately
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === msgId ? { ...m, content: finalText, metadata_json: JSON.stringify(metadata) } : m
+          )
+        )
       }
 
       requestIdRef.current = null
       assistantMsgIdRef.current = null
       accumulatedTextRef.current = ''
+      accumulatedThoughtRef.current = ''
       setIsStreaming(false)
     })
 
@@ -127,17 +188,18 @@ export default function ChatScreen() {
       requestIdRef.current = null
       assistantMsgIdRef.current = null
       accumulatedTextRef.current = ''
+      accumulatedThoughtRef.current = ''
       setIsStreaming(false)
     })
 
     const unsubTitle = window.dexterai.on('chat:title-updated', (data) => {
       if (data.conversationId === conversationId) {
-        setTitle(data.title)
         loadConversations()
       }
     })
 
     return () => {
+      if (drainIntervalRef.current) clearInterval(drainIntervalRef.current)
       unsubChunk()
       unsubDone()
       unsubError()
@@ -173,6 +235,10 @@ export default function ChatScreen() {
     requestIdRef.current = reqId
     assistantMsgIdRef.current = assistantMsg.id
     accumulatedTextRef.current = ''
+    accumulatedThoughtRef.current = ''
+    textBufferRef.current = ''
+    thoughtBufferRef.current = ''
+    statsRef.current = { startTime: Date.now(), firstChunkTime: 0, tokensSent: 0 }
     setIsStreaming(true)
 
     // 4. Build message history for context
@@ -233,21 +299,6 @@ export default function ChatScreen() {
     }
   }
 
-  const handleTitleClick = () => {
-    setEditTitle(title || '')
-    setIsEditingTitle(true)
-  }
-
-  const handleTitleSave = async () => {
-    setIsEditingTitle(false)
-    const newTitle = editTitle.trim() || null
-    if (newTitle !== title && conversationId) {
-      setTitle(newTitle)
-      await window.dexterai.conversations.update(conversationId, { title: newTitle || undefined })
-      loadConversations()
-    }
-  }
-
   const handleSettingsSave = (s: ConversationSettings) => {
     setSettings(s)
     settingsRef.current = s
@@ -288,10 +339,10 @@ export default function ChatScreen() {
     const handler = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key === 's') {
         e.preventDefault()
-        setDrawerOpen((v) => !v)
+        setIsChatSettingsOpen(!isChatSettingsOpen)
       }
       if (e.key === 'Escape') {
-        setDrawerOpen(false)
+        setIsChatSettingsOpen(false)
       }
     }
     window.addEventListener('keydown', handler)
@@ -308,38 +359,6 @@ export default function ChatScreen() {
 
   return (
     <div className="flex flex-col h-full relative">
-      {/* Header */}
-      <div className="px-6 py-3 border-b border-border bg-background shrink-0 flex items-center justify-between">
-        {isEditingTitle ? (
-          <input
-            autoFocus
-            value={editTitle}
-            onChange={(e) => setEditTitle(e.target.value)}
-            onBlur={handleTitleSave}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') handleTitleSave()
-              if (e.key === 'Escape') setIsEditingTitle(false)
-            }}
-            className="text-sm font-semibold text-text bg-transparent border-b border-primary outline-none flex-1 mr-2"
-          />
-        ) : (
-          <h2
-            onClick={handleTitleClick}
-            className="text-sm font-semibold text-text truncate cursor-pointer hover:text-primary transition-colors"
-            title="Click to rename"
-          >
-            {title || 'New Conversation'}
-          </h2>
-        )}
-        <button
-          onClick={() => setDrawerOpen(!drawerOpen)}
-          className="p-1.5 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
-          title="Chat settings"
-        >
-          <Settings2 className="w-4 h-4 text-gray-400" />
-        </button>
-      </div>
-
       {/* Messages */}
       <div className="flex-1 overflow-y-auto p-6 space-y-6">
         {messages.filter((m) => m.role !== 'system').length === 0 ? (
@@ -371,14 +390,15 @@ export default function ChatScreen() {
         selectedModelId={selectedModelId}
         selectedProviderId={selectedProviderId}
         connectedProviders={connectedProviders}
+        connectedModels={connectedModels}
         onModelChange={setSelectedModel}
       />
 
       {/* Settings Drawer */}
       {conversationId && (
         <SettingsDrawer
-          open={drawerOpen}
-          onClose={() => setDrawerOpen(false)}
+          open={isChatSettingsOpen}
+          onClose={() => setIsChatSettingsOpen(false)}
           conversationId={conversationId}
           settings={settings}
           onSave={handleSettingsSave}

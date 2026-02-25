@@ -44,3 +44,4 @@ logs/
 # Temp
 tmp/
 .temp/
+node_modules

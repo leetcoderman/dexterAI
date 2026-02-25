@@ -26,10 +26,15 @@ export function registerCredentialHandlers() {
     ipcMain.handle('credentials:listConnected', async () => {
         try {
             const db = getDatabase();
-            const rows = db.prepare('SELECT provider_id FROM connections').all() as { provider_id: string }[];
-            return rows.map(r => r.provider_id);
+            const rows = db.prepare('SELECT provider_id, model_ids FROM connections').all() as { provider_id: string; model_ids: string }[];
+            return {
+                providers: rows.map(r => r.provider_id),
+                models: rows.flatMap(r => {
+                    try { return JSON.parse(r.model_ids || '[]') } catch { return [] }
+                })
+            };
         } catch {
-            return [];
+            return { providers: [], models: [] };
         }
     });
 }

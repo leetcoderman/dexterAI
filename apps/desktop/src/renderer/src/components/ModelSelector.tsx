@@ -8,6 +8,7 @@ interface ModelSelectorProps {
   selectedModelId: string | null
   selectedProviderId: string | null
   connectedProviders: string[]
+  connectedModels: string[]
   onSelect: (modelId: string, providerId: string) => void
 }
 
@@ -23,6 +24,7 @@ export default function ModelSelector({
   selectedModelId,
   selectedProviderId,
   connectedProviders,
+  connectedModels,
   onSelect
 }: ModelSelectorProps) {
   const [open, setOpen] = useState(false)
@@ -121,10 +123,18 @@ export default function ModelSelector({
                   </div>
                   {grouped[providerId].map((model) => {
                     const isSelected = model.id === selectedModelId && model.provider_id === selectedProviderId
+                    // Per-model check: if connectedModels has entries for this provider, use per-model check
+                    // Otherwise fall back to provider-level (all models enabled when connected)
+                    const providerHasModelList = isConnected && connectedModels.some(
+                      (mid) => uniqueModels.find((m) => m.id === mid && m.provider_id === providerId)
+                    )
+                    const isAccessible = isConnected && (
+                      providerHasModelList ? connectedModels.includes(model.id) : true
+                    )
                     return (
                       <button
                         key={`${model.provider_id}:${model.id}`}
-                        disabled={!isConnected}
+                        disabled={!isAccessible}
                         onClick={() => {
                           onSelect(model.id, model.provider_id)
                           setOpen(false)
@@ -132,13 +142,13 @@ export default function ModelSelector({
                         }}
                         className={cn(
                           'w-full px-3 py-2 flex items-center gap-2 text-left text-sm transition-colors',
-                          isConnected
+                          isAccessible
                             ? 'hover:bg-black/5 dark:hover:bg-white/5 text-text cursor-pointer'
                             : 'text-gray-400 cursor-not-allowed opacity-50',
                           isSelected && 'bg-primary/5'
                         )}
                       >
-                        {isConnected ? (
+                        {isAccessible ? (
                           <Check
                             className={cn(
                               'w-3.5 h-3.5 shrink-0',
