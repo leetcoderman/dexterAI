@@ -1,6 +1,6 @@
 {
   "name": "dexterai",
-  "version": "1.0.0",
+  "version": "3.11.0",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -8,5 +8,14 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "description": ""
+  "description": "",
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "better-sqlite3",
+      "keytar",
+      "node-pty",
+      "esbuild",
+      "electron"
+    ]
+  }
 }

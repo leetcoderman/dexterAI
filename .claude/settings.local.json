@@ -1,7 +1,11 @@
 {
   "permissions": {
     "allow": [
-      "Bash(tail:*)"
+      "Bash(tail:*)",
+      "Bash(npx electron-rebuild:*)",
+      "Bash(npx:*)",
+      "Bash(pip3 install:*)",
+      "Bash(timeout 15 npm run:*)"
     ]
   }
 }

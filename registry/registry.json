@@ -1,5 +1,5 @@
 {
-    "registry_version": "1.0.0",
+    "registry_version": "2026.02.2",
     "providers": [
         {
             "provider_id": "nvidia_nim",
@@ -36,8 +36,22 @@
             "supported_features": [
                 "vision",
                 "json_mode",
-                "system_prompt"
-            ]
+                "system_prompt",
+                "tools"
+            ],
+            "knowledge_cutoff": "October 2023",
+            "capabilities": [
+                "Advanced Reasoning",
+                "Coding",
+                "Vision",
+                "Multi-step Tasks"
+            ],
+            "performance_metrics": {
+                "speed": 8,
+                "reasoning": 9,
+                "coding": 9
+            },
+            "description_long": "GPT-4o is OpenAI's flagship model, designed for high-intelligence tasks that require complex reasoning and multi-modal understanding. It excels in software engineering, complex data analysis, and creative problem solving."
         },
         {
             "id": "gpt-4o-mini",
@@ -53,8 +67,22 @@
             "supported_features": [
                 "vision",
                 "json_mode",
-                "system_prompt"
-            ]
+                "system_prompt",
+                "tools"
+            ],
+            "knowledge_cutoff": "October 2023",
+            "capabilities": [
+                "Fast Response",
+                "Chat",
+                "Basic Logic",
+                "Vision"
+            ],
+            "performance_metrics": {
+                "speed": 10,
+                "reasoning": 7,
+                "coding": 7
+            },
+            "description_long": "GPT-4o mini provides a perfect balance of intelligence and incredible speed. It is optimized for high-volume, lightweight tasks like customer support automation, basic data extraction, and rapid prototyping."
         },
         {
             "id": "claude-3-7-sonnet-20250219",
@@ -69,8 +97,23 @@
             },
             "supported_features": [
                 "vision",
-                "system_prompt"
-            ]
+                "system_prompt",
+                "tools",
+                "thinking"
+            ],
+            "knowledge_cutoff": "October 2024",
+            "capabilities": [
+                "Extended Thinking",
+                "Elite Coding",
+                "Research",
+                "Agentic Workflows"
+            ],
+            "performance_metrics": {
+                "speed": "Standard (Thinking: Variable)",
+                "reasoning": 10,
+                "coding": 10
+            },
+            "description_long": "Claude 3.7 Sonnet is the first hybrid reasoning model, capable of both instantaneous responses and extended, visible 'thinking' for complex graduate-level problems. It sets the industry standard for software engineering and nuanced instruction following."
         },
         {
             "id": "claude-3-5-haiku-20241022",
@@ -84,8 +127,21 @@
                 "output_per_1m_tokens": 4.0
             },
             "supported_features": [
-                "system_prompt"
-            ]
+                "system_prompt",
+                "tools"
+            ],
+            "knowledge_cutoff": "July 2024",
+            "capabilities": [
+                "Sub-second Latency",
+                "Data Transformation",
+                "Structured Output"
+            ],
+            "performance_metrics": {
+                "speed": 10,
+                "reasoning": 8,
+                "coding": 8
+            },
+            "description_long": "Claude 3.5 Haiku is Anthropic's fastest model. It matches the intelligence of previous flagship models like Claude 3 Opus while operating at the speed and cost of a lineage model. Perfect for real-time applications."
         },
         {
             "id": "nova-2",
@@ -146,8 +202,22 @@
             "supported_features": [
                 "vision",
                 "system_prompt",
-                "thinking_levels"
-            ]
+                "thinking_levels",
+                "tools"
+            ],
+            "knowledge_cutoff": "November 2024",
+            "capabilities": [
+                "Million Token Context",
+                "Native Multimodal",
+                "Variable Thinking",
+                "Video Analysis"
+            ],
+            "performance_metrics": {
+                "speed": 9,
+                "reasoning": 9,
+                "coding": 9
+            },
+            "description_long": "Gemini 3.1 Pro is Google's most capable model for complex reasoning. With its massive 1M+ token context window, it can ingest entire codebases, hours of video, or thousands of documents in a single turn."
         },
         {
             "id": "gemini-3-pro-preview",
@@ -162,8 +232,21 @@
             },
             "supported_features": [
                 "vision",
-                "system_prompt"
-            ]
+                "system_prompt",
+                "tools"
+            ],
+            "knowledge_cutoff": "May 2024",
+            "capabilities": [
+                "Multimodal Search",
+                "Logical Reasoning",
+                "Agentic Tools"
+            ],
+            "performance_metrics": {
+                "speed": 8,
+                "reasoning": 9,
+                "coding": 8
+            },
+            "description_long": "Gemini 3 Pro brings advanced multimodal understanding and world knowledge. It is highly optimized for creative collaboration and solving deep logical puzzles across text and images."
         },
         {
             "id": "gemini-3-flash-preview",
@@ -178,8 +261,21 @@
             },
             "supported_features": [
                 "vision",
-                "system_prompt"
-            ]
+                "system_prompt",
+                "tools"
+            ],
+            "knowledge_cutoff": "May 2024",
+            "capabilities": [
+                "Ultra-Low Latency",
+                "High Volume",
+                "Multimodal API"
+            ],
+            "performance_metrics": {
+                "speed": 10,
+                "reasoning": 8,
+                "coding": 8
+            },
+            "description_long": "Gemini 3 Flash is built for scale. It offers reasoning capabilities that rival larger models while maintaining extremely low latency, making it the ideal choice for high-frequency multimodal applications."
         },
         {
             "id": "gemini-3-pro-image-preview",
@@ -198,7 +294,20 @@
             "category": "text_generation",
             "name": "Llama 4 Maverick 17B",
             "description": "NVIDIA NIM: Fast reasoning model.",
-            "context_window": 128000
+            "context_window": 128000,
+            "knowledge_cutoff": "December 2024",
+            "capabilities": [
+                "Extreme Scale",
+                "MoE Architecture",
+                "Vision-Language",
+                "High Throughput"
+            ],
+            "performance_metrics": {
+                "speed": 9,
+                "reasoning": 10,
+                "coding": 9
+            },
+            "description_long": "Llama 4 Maverick is an elite 400B+ parameter MoE model optimized by NVIDIA for maximum inference speed. It represents the pinnacle of open-weights multimodal performance."
         },
         {
             "id": "meta/llama-4-scout-17b-16e-instruct",
@@ -206,7 +315,19 @@
             "category": "text_generation",
             "name": "Llama 4 Scout 17B",
             "description": "NVIDIA NIM: Efficient instruct model.",
-            "context_window": 16000
+            "context_window": 16000,
+            "knowledge_cutoff": "December 2024",
+            "capabilities": [
+                "Sub-second Inference",
+                "Edge Optimized",
+                "Instruction Following"
+            ],
+            "performance_metrics": {
+                "speed": 10,
+                "reasoning": 7,
+                "coding": 7
+            },
+            "description_long": "Llama 4 Scout is a highly efficient 17B model designed for rapid response times and low-resource deployment while maintaining Llama 4's superior instruction-following DNA."
         },
         {
             "id": "meta/llama-3.3-70b-instruct",
@@ -214,47 +335,145 @@
             "category": "text_generation",
             "name": "Llama 3.3 70B Instruct",
             "description": "NVIDIA NIM: High quality open model.",
-            "context_window": 128000
+            "context_window": 128000,
+            "knowledge_cutoff": "July 2024",
+            "capabilities": [
+                "Balanced Performance",
+                "RAG Optimized",
+                "Community Favorite"
+            ],
+            "performance_metrics": {
+                "speed": 8,
+                "reasoning": 9,
+                "coding": 8
+            },
+            "description_long": "Llama 3.3 70B is a massive leap over previous 70B models, providing GPT-4 level intelligence in an open-weights package, heavily optimized for tool calling and RAG."
         },
         {
             "id": "nvidia/nemotron-3-nano-30b-a3b",
             "provider_id": "nvidia_nim",
             "category": "text_generation",
-            "name": "Nemotron 3 Nano 30B",
-            "description": "NVIDIA NIM: In-house small model.",
-            "context_window": 8000
+            "name": "Nemotron-3 Nano 30B",
+            "description": "NVIDIA NIM: Fast MoE model optimized for agentic reasoning.",
+            "context_window": 128000,
+            "knowledge_cutoff": "January 2025",
+            "capabilities": [
+                "Agentic Reasoning",
+                "Mixture-of-Experts",
+                "High Throughput",
+                "Multilingual Support"
+            ],
+            "performance_metrics": {
+                "speed": 10,
+                "reasoning": 8,
+                "coding": 8
+            },
+            "description_long": "Nemotron-3 Nano 30B is a breakthrough open MoE model designed for sub-second agentic reasoning. It activates only 3.2B parameters per forward pass, achieving up to 3.3x higher throughput than comparable dense models."
         },
         {
             "id": "qwen/qwen2.5-coder-32b-instruct",
             "provider_id": "nvidia_nim",
-            "category": "code_generation",
+            "category": "text_generation",
             "name": "Qwen 2.5 Coder 32B",
-            "description": "NVIDIA NIM: Top-tier open coding model.",
-            "context_window": 32000
+            "description": "NVIDIA NIM: SOTA open code model.",
+            "context_window": 131072,
+            "knowledge_cutoff": "Early 2025",
+            "capabilities": [
+                "SOTA Open Coding",
+                "92 Languages",
+                "Natural Language Reasoning",
+                "YaRN Long Context"
+            ],
+            "performance_metrics": {
+                "speed": 9,
+                "reasoning": 9,
+                "coding": 10
+            },
+            "description_long": "Qwen 2.5 Coder 32B is a state-of-the-art open coding model that rivals GPT-4o's programming performance. Optimized for instruction-following code repair and generation across 92 programming languages."
         },
         {
             "id": "qwen/qwen3.5-397b-a17b",
             "provider_id": "nvidia_nim",
-            "category": "image_understanding",
+            "category": "text_generation",
             "name": "Qwen 3.5 VLM 397B",
-            "description": "NVIDIA NIM: High capacity multimodal model.",
-            "context_window": 32000
+            "description": "NVIDIA NIM: Native multimodal MoE model.",
+            "context_window": 262144,
+            "knowledge_cutoff": "January 2026",
+            "capabilities": [
+                "201 Languages",
+                "Video Understanding",
+                "High-Throughput MoE",
+                "Physical AI Context"
+            ],
+            "performance_metrics": {
+                "speed": 9,
+                "reasoning": 9,
+                "coding": 8
+            },
+            "description_long": "Qwen 3.5 VLM 397B is NVIDIA's flagship open multimodal model, supporting 201 languages and advanced video analysis. Its efficient architecture is up to 19x faster than previous generation dense models."
         },
         {
             "id": "nvidia/cosmos-reason2-8b",
             "provider_id": "nvidia_nim",
-            "category": "image_understanding",
+            "category": "text_generation",
             "name": "Cosmos Reason2 8B",
-            "description": "NVIDIA NIM: Multimodal reasoning.",
-            "context_window": 8000
+            "description": "NVIDIA NIM: Physical AI reasoning model.",
+            "context_window": 256000,
+            "knowledge_cutoff": "December 2025",
+            "capabilities": [
+                "Physical Reasoning",
+                "Robotic Motor Commands",
+                "Vision-Language-Action",
+                "Spatio-temporal Logic"
+            ],
+            "performance_metrics": {
+                "speed": 9,
+                "reasoning": 10,
+                "coding": 6
+            },
+            "description_long": "Cosmos Reason2 8B is a specialized Vision-Language-Action (VLA) model designed for Physical AI. It excels in reasoning about physics, spatio-temporal dynamics, and generating direct motor commands for robotics."
         },
         {
             "id": "moonshotai/kimi-k2.5",
             "provider_id": "nvidia_nim",
-            "category": "image_understanding",
-            "name": "Kimi K2.5 Multimodal",
-            "description": "NVIDIA NIM: General purpose vision.",
-            "context_window": 64000
+            "category": "text_generation",
+            "name": "Kimi K2.5",
+            "description": "NVIDIA NIM: Trillion-param native multimodal agent.",
+            "context_window": 256000,
+            "knowledge_cutoff": "January 2026",
+            "capabilities": [
+                "Agent Swarms",
+                "1T Parameter MoE",
+                "Vision-Native Coding",
+                "browseComp SOTA"
+            ],
+            "performance_metrics": {
+                "speed": 8,
+                "reasoning": 10,
+                "coding": 9
+            },
+            "description_long": "Kimi K2.5 is a trillion-parameter MoE model designed for Visual Agentic Intelligence. It can coordinate up to 100 specialized agents in parallel and generates code directly from visual UI wireframes and videos."
+        },
+        {
+            "id": "minimax/minimax-m2.1",
+            "provider_id": "nvidia_nim",
+            "category": "text_generation",
+            "name": "Minimax-M2.1",
+            "description": "NVIDIA NIM: Infinite context agent.",
+            "context_window": 4000000,
+            "knowledge_cutoff": "January 2026",
+            "capabilities": [
+                "4M Token Context",
+                "Software Dev SOTA",
+                "Linear Complexity",
+                "Full-Doc reasoning"
+            ],
+            "performance_metrics": {
+                "speed": 10,
+                "reasoning": 9,
+                "coding": 10
+            },
+            "description_long": "Minimax M2.1 is an industry outlier with a massive 4-million token context window. It uses linear-complexity modeling to ingest entire libraries and codebases without the exponential cost of standard transformers."
         },
         {
             "id": "nvidia/parakeet-ctc-0.6b",
@@ -263,7 +482,7 @@
             "name": "Parakeet CTC 0.6B",
             "description": "NVIDIA NIM: Fast English ASR.",
             "pricing": {
-                "per_minute": 0.0000
+                "per_minute": 0
             }
         },
         {
@@ -287,103 +506,231 @@
             "provider_id": "nvidia_nim",
             "category": "text_generation",
             "name": "DeepSeek V3.1",
-            "description": "NVIDIA NIM: High-tier hybrid reasoning model with fast thinking and tool-use capabilities.",
+            "description": "NVIDIA NIM: Elite Reasoning & Agentic model.",
             "context_window": 128000,
-            "supported_features": [
-                "thinking",
-                "system_prompt"
-            ]
+            "knowledge_cutoff": "August 2025",
+            "capabilities": [
+                "Thinking Mode",
+                "Multi-step Agentic",
+                "Hallucination Reduction",
+                "MoE Efficiency"
+            ],
+            "performance_metrics": {
+                "speed": 8,
+                "reasoning": 10,
+                "coding": 9
+            },
+            "description_long": "DeepSeek V3.1 is a massive 671B parameter hybrid reasoning model. It introduces optimized tool-calling and search agents, significantly reducing hallucinations while providing high reasoning performance."
         },
         {
             "id": "deepseek-ai/deepseek-v3.1-terminus",
             "provider_id": "nvidia_nim",
-            "category": "code_generation",
+            "category": "text_generation",
             "name": "DeepSeek V3.1 Terminus",
-            "description": "NVIDIA NIM: Optimized for agentic search, code generation, and tool orchestration.",
+            "description": "NVIDIA NIM: Terminal-optimized reasoning model.",
             "context_window": 128000,
-            "supported_features": [
-                "thinking",
-                "system_prompt"
-            ]
+            "knowledge_cutoff": "Early 2026",
+            "capabilities": [
+                "Terminal Benchmarked",
+                "Multilingual Stability",
+                "Smarter Tool Use",
+                "Code Agent Focus"
+            ],
+            "performance_metrics": {
+                "speed": 9,
+                "reasoning": 10,
+                "coding": 10
+            },
+            "description_long": "DeepSeek V3.1 Terminus is a refined version of the V3.1 model, specifically tuned for CLI stability and agentic terminal workflows. It fixes multilingual character anomalies and excels in complex code generation."
         },
         {
             "id": "deepseek-ai/deepseek-r1-distill-llama-8b",
             "provider_id": "nvidia_nim",
             "category": "text_generation",
             "name": "DeepSeek R1 Distill Llama 8B",
-            "description": "NVIDIA NIM: Highly efficient reasoning distilled from DeepSeek-R1 into Llama 3.1 8B.",
+            "description": "NVIDIA NIM: Efficient reasoning model.",
             "context_window": 128000,
-            "supported_features": [
-                "thinking",
-                "system_prompt"
-            ]
+            "knowledge_cutoff": "July 2024",
+            "capabilities": [
+                "R1 Thinking CoT",
+                "Math & Logic",
+                "Edge Deployment",
+                "High Inference Speed"
+            ],
+            "performance_metrics": {
+                "speed": 10,
+                "reasoning": 9,
+                "coding": 7
+            },
+            "description_long": "DeepSeek R1 Distill Llama 8B leverages the reasoning CoT of the massive R1 models in a compact 8B package. Perfect for low-latency reasoning on edge hardware."
         },
         {
             "id": "deepseek-ai/deepseek-r1-distill-qwen-32b",
             "provider_id": "nvidia_nim",
             "category": "text_generation",
             "name": "DeepSeek R1 Distill Qwen 32B",
-            "description": "NVIDIA NIM: Top-tier math and logic distillation from DeepSeek-R1 into Qwen 2.5 32B.",
+            "description": "NVIDIA NIM: Powerful distilled reasoning model.",
             "context_window": 128000,
-            "supported_features": [
-                "thinking",
-                "system_prompt"
-            ]
+            "knowledge_cutoff": "Early 2025",
+            "capabilities": [
+                "Advanced CoT",
+                "Mathematics",
+                "Complex Reasoning",
+                "Instruction Following"
+            ],
+            "performance_metrics": {
+                "speed": 8,
+                "reasoning": 10,
+                "coding": 8
+            },
+            "description_long": "DeepSeek R1 Distill Qwen 32B represents a superior balance of size and reasoning quality. It captures the deep multi-step logic of the 671B model while remaining highly efficient for general production use."
         },
         {
             "id": "qwen/qwen3-coder-480b-a35b-instruct",
             "provider_id": "nvidia_nim",
-            "category": "code_generation",
-            "name": "Qwen3 Coder 480B",
-            "description": "NVIDIA NIM: 480B-parameter mega coding model built specifically for software development.",
-            "context_window": 128000,
-            "supported_features": [
-                "system_prompt"
-            ]
+            "category": "text_generation",
+            "name": "Qwen 3 Coder 480B",
+            "description": "NVIDIA NIM: Massive open-weights coder.",
+            "context_window": 131072,
+            "knowledge_cutoff": "January 2026",
+            "capabilities": [
+                "Elite Software Engineering",
+                "System Architecture",
+                "Cross-language reasoning",
+                "MoE Scalability"
+            ],
+            "performance_metrics": {
+                "speed": 7,
+                "reasoning": 10,
+                "coding": 10
+            },
+            "description_long": "Qwen 3 Coder 480B is the top-tier coding variant of the Qwen 3 series. It provides unmatched reasoning depth for system architecture and complex logic repairs in over 100 programming languages."
         },
         {
-            "id": "qwen/qwen3-next-80b-a3b-instruct",
+            "id": "meta/llama-3.1-405b-instruct",
             "provider_id": "nvidia_nim",
             "category": "text_generation",
-            "name": "Qwen3 Next 80B",
-            "description": "NVIDIA NIM: Ultra-long context hybrid MoE model supporting 119 languages.",
+            "name": "Llama 3.1 405B",
+            "description": "NVIDIA NIM: The original open flagship.",
+            "context_window": 128000,
+            "knowledge_cutoff": "July 2024",
+            "capabilities": [
+                "World-class Reasoning",
+                "Instruction Following",
+                "Multilingual",
+                "Large-scale Agentic"
+            ],
+            "performance_metrics": {
+                "speed": 6,
+                "reasoning": 10,
+                "coding": 9
+            },
+            "description_long": "Llama 3.1 405B is the first open-weights model to rival GPT-4o in general knowledge and reasoning depth. It remains a reliable baseline for complex instruction following and synthetic data generation."
+        },
+        {
+            "id": "mistralai/mistral-large-3-675b-instruct-2512",
+            "provider_id": "nvidia_nim",
+            "category": "text_generation",
+            "name": "Mistral Large 2512",
+            "description": "NVIDIA NIM: Multilingual MoE powerhouse.",
             "context_window": 256000,
-            "supported_features": [
-                "system_prompt"
-            ]
-        },
-        {
-            "id": "nvidia/llama-3.3-nemotron-super-49b-v1.5",
-            "provider_id": "nvidia_nim",
-            "category": "text_generation",
-            "name": "Nemotron Super 49B v1.5",
-            "description": "NVIDIA NIM: Optimized instruction-following model based on Llama 3.3.",
-            "context_window": 128000,
-            "supported_features": [
-                "system_prompt"
-            ]
-        },
-        {
-            "id": "nvidia/nemotron-nano-12b-v2-vl",
-            "provider_id": "nvidia_nim",
-            "category": "image_understanding",
-            "name": "Nemotron Nano 12B v2 VL",
-            "description": "NVIDIA NIM: Small open multimodal reasoning model with video and image understanding.",
-            "context_window": 16000,
-            "supported_features": [
-                "vision"
-            ]
+            "knowledge_cutoff": "December 2025",
+            "capabilities": [
+                "256K Context",
+                "Mistral Native Vision",
+                "40+ Languages",
+                "Sparse MoE Logic"
+            ],
+            "performance_metrics": {
+                "speed": 8,
+                "reasoning": 10,
+                "coding": 9
+            },
+            "description_long": "Mistral Large 3 (2512) is the latest MoE flagship from Mistral AI. With 675B total parameters and native vision, it offers an unprecedented 256K context window and elite multilingual performance."
         },
         {
             "id": "zhipuai/glm-5-744b-moe",
             "provider_id": "nvidia_nim",
             "category": "text_generation",
             "name": "GLM-5 744B MoE",
-            "description": "NVIDIA NIM: 744B MoE model for complex systems reasoning, long-horizon agentic tasks.",
+            "description": "NVIDIA NIM: Advanced agentic MoE.",
+            "context_window": 202752,
+            "knowledge_cutoff": "December 2025",
+            "capabilities": [
+                "Long-horizon Agentic",
+                "Sparse Attention",
+                "Systems Engineering",
+                "Web Browsing Logic"
+            ],
+            "performance_metrics": {
+                "speed": 8,
+                "reasoning": 10,
+                "coding": 9
+            },
+            "description_long": "GLM-5 744B is a massive MoE transformer optimized for long-horizon agentic tasks. It uses DeepSeek Sparse Attention (DSA) to maintain 200k+ context performance with significantly reduced memory pressure."
+        },
+        {
+            "id": "nvidia/nemotron-nano-12b-v2-vl",
+            "provider_id": "nvidia_nim",
+            "category": "text_generation",
+            "name": "Nemotron Nano 12B VL",
+            "description": "NVIDIA NIM: Fast Vision-Language Agent.",
+            "context_window": 131072,
+            "knowledge_cutoff": "December 2025",
+            "capabilities": [
+                "Visual Question Answering",
+                "Concise Doc Parsing",
+                "Long Video Understanding",
+                "STEM Reasoning"
+            ],
+            "performance_metrics": {
+                "speed": 11,
+                "reasoning": 8,
+                "coding": 6
+            },
+            "description_long": "Nemotron Nano 12B VL is NVIDIA's most efficient visual agent. With a 128k context window and specialized visual reasoning, it is perfect for rapid document parsing and analyzing long-duration video feeds."
+        },
+        {
+            "id": "qwen/qwen3-next-80b-a3b-instruct",
+            "provider_id": "nvidia_nim",
+            "category": "text_generation",
+            "name": "Qwen3 Next 80B",
+            "description": "NVIDIA NIM: Ultra-long context hybrid MoE model.",
+            "context_window": 256000,
+            "knowledge_cutoff": "Early 2026",
+            "capabilities": [
+                "Hybrid MoE",
+                "119 Languages",
+                "Long Context Reasoning",
+                "Efficient Inference"
+            ],
+            "performance_metrics": {
+                "speed": 10,
+                "reasoning": 9,
+                "coding": 8
+            },
+            "description_long": "Qwen3 Next 80B is part of the next-generation Qwen series, optimized for massive multilingual support and long-context reasoning with a highly efficient hybrid MoE architecture."
+        },
+        {
+            "id": "nvidia/llama-3.3-nemotron-super-49b-v1.5",
+            "provider_id": "nvidia_nim",
+            "category": "text_generation",
+            "name": "Nemotron Super 49B v1.5",
+            "description": "NVIDIA NIM: Elite reasoning model.",
             "context_window": 128000,
-            "supported_features": [
-                "system_prompt"
-            ]
+            "knowledge_cutoff": "Late 2024",
+            "capabilities": [
+                "Superior RL HF",
+                "Steerability",
+                "Precise Logic",
+                "Chat Optimized"
+            ],
+            "performance_metrics": {
+                "speed": 9,
+                "reasoning": 10,
+                "coding": 8
+            },
+            "description_long": "Nemotron Super 49B is a specialized version of Llama 3.3, further refined by NVIDIA with Reinforcement Learning (RL) to achieve superhuman instruction following and world-class reasoning quality."
         },
         {
             "id": "gemini-1.5-pro",

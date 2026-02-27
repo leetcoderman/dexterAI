@@ -15,6 +15,9 @@ import { registerMessageHandlers } from './ipc/messages.ipc';
 import { registerChatHandlers } from './ipc/chat.ipc';
 import { registerMemoryHandlers } from './ipc/memory.ipc';
 import { registerSettingsHandlers } from './ipc/settings.ipc';
+import { registerFilesystemHandlers } from './ipc/filesystem.ipc';
+import { registerAgentHandlers } from './ipc/agent.ipc';
+import { registerTerminalHandlers, disposeAllTerminals } from './ipc/terminal.ipc';
 import { AdapterRegistry } from './adapters/adapter-registry';
 import { OpenAIAdapter } from './adapters/openai.adapter';
 import { AnthropicAdapter } from './adapters/anthropic.adapter';
@@ -146,6 +149,14 @@ app.whenReady().then(() => {
   registerChatHandlers();
   registerMemoryHandlers();
   registerSettingsHandlers();
+  registerFilesystemHandlers();
+  registerAgentHandlers();
+  registerTerminalHandlers();
+
+  // Window management
+  ipcMain.handle('app:openWindow', () => {
+    createWindow()
+  })
 
   createWindow()
 
@@ -167,6 +178,7 @@ app.on('window-all-closed', () => {
 })
 
 app.on('will-quit', () => {
+  disposeAllTerminals()
   closeDatabase()
 })
 

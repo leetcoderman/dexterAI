@@ -1,7 +1,8 @@
 import { useLocation, useParams, useNavigate } from 'react-router-dom'
-import { Plus, Settings2, Download, ChevronDown, FileText, File as FileIcon, Type } from 'lucide-react'
+import { Plus, Settings2, Download, ChevronDown, FileText, File as FileIcon, Type, X, FolderOpen, ExternalLink } from 'lucide-react'
 import { useState, useRef, useEffect } from 'react'
 import { useAppStore } from '../../store'
+import EditableTitle from '../chat/EditableTitle'
 import { generateMarkdown, generatePDF, generateDOCX } from '../../utils/export-utils'
 
 const ROUTE_TITLES: Record<string, string> = {
@@ -10,7 +11,8 @@ const ROUTE_TITLES: Record<string, string> = {
   '/explore': 'Use-case Gallery',
   '/catalogue': 'Model Catalogue',
   '/memory': 'Memory',
-  '/settings': 'Settings'
+  '/settings': 'Settings',
+  '/code': 'Code Workspace'
 }
 
 export default function Topbar() {
@@ -19,7 +21,17 @@ export default function Topbar() {
   const navigate = useNavigate()
   const connectedProviders = useAppStore((s) => s.connectedProviders)
   const conversations = useAppStore((s) => s.conversations)
-  const { isChatSettingsOpen, setIsChatSettingsOpen } = useAppStore()
+  const {
+    isChatSettingsOpen,
+    setIsChatSettingsOpen,
+    loadConversations,
+    projectRoot,
+    setProjectRoot,
+    setFileTree,
+    setOpenFiles,
+    setActiveFileIndex,
+    setCodeConversationId
+  } = useAppStore()
 
   const [isExportOpen, setIsExportOpen] = useState(false)
   const [isExporting, setIsExporting] = useState(false)
@@ -85,6 +97,41 @@ export default function Topbar() {
     }
   }
 
+  const handleOpenFolder = async () => {
+    const result = await window.dexterai.fs.openFolder()
+    if (!result) return
+    setOpenFiles([])
+    setActiveFileIndex(-1)
+    setCodeConversationId(null)
+    setProjectRoot(result.rootPath)
+    try {
+      const tree = await window.dexterai.fs.readDir({ rootPath: result.rootPath })
+      setFileTree(tree)
+    } catch (e) {
+      console.error('Failed to load file tree:', e)
+    }
+  }
+
+  const handleUpdateTitle = async (newTitle: string) => {
+    if (!conversationId) return
+    const result = await window.dexterai.conversations.update(conversationId, { title: newTitle })
+    if (result.success) {
+      loadConversations()
+    }
+  }
+
+  const handleCloseFolder = () => {
+    setProjectRoot(null)
+    setFileTree([])
+    setOpenFiles([])
+    setActiveFileIndex(-1)
+    setCodeConversationId(null)
+  }
+
+  const handleNewWindow = () => {
+    window.dexterai.app.openWindow()
+  }
+
   let title = ROUTE_TITLES[location.pathname] ?? 'dexterAI'
   if (providerId) title = `Connect ${providerId.charAt(0).toUpperCase() + providerId.slice(1)}`
   if (modelId) title = modelId
@@ -98,9 +145,19 @@ export default function Topbar() {
   return (
     <header className="h-12 shrink-0 border-b border-border-subtle bg-sidebar-bg flex items-center justify-between px-5 drag-region z-10">
       <div className="flex items-center gap-4 no-drag min-w-0">
-        <h2 className="text-sm font-semibold text-text-secondary truncate max-w-xs no-select">
-          {title}
-        </h2>
+        {conversationId ? (
+          <div className="max-w-xs no-drag">
+            <EditableTitle
+              value={title}
+              onSave={handleUpdateTitle}
+              textClassName="text-sm font-semibold text-text-secondary"
+            />
+          </div>
+        ) : (
+          <h2 className="text-sm font-semibold text-text-secondary truncate max-w-xs no-select">
+            {title}
+          </h2>
+        )}
         {/* Connected Indicator - Beside Title */}
         <div
           className={cn(
@@ -118,6 +175,36 @@ export default function Topbar() {
           />
           {count} Connected
         </div>
+
+        {/* Workspace Controls */}
+        {location.pathname === '/code' && projectRoot && (
+          <div className="flex items-center gap-1 ml-2 border-l border-border-subtle pl-3">
+            <button
+              onClick={handleCloseFolder}
+              className="flex items-center gap-1.5 px-2 py-1 rounded-md text-[10px] font-bold bg-red-500/10 text-red-500 hover:bg-red-500/20 border border-red-500/10 transition-colors"
+              title="Close Folder"
+            >
+              <X className="w-3 h-3" />
+              Close
+            </button>
+            <button
+              onClick={handleOpenFolder}
+              className="flex items-center gap-1.5 px-2 py-1 rounded-md text-[10px] font-bold bg-primary/10 text-primary hover:bg-primary/20 border border-primary/10 transition-colors"
+              title="Open Another Folder"
+            >
+              <FolderOpen className="w-3 h-3" />
+              Open
+            </button>
+            <button
+              onClick={handleNewWindow}
+              className="flex items-center gap-1.5 px-2 py-1 rounded-md text-[10px] font-bold bg-blue-500/10 text-blue-500 hover:bg-blue-500/20 border border-blue-500/10 transition-colors"
+              title="Open in New Window"
+            >
+              <ExternalLink className="w-3 h-3" />
+              New Window
+            </button>
+          </div>
+        )}
 
         {/* Chat Settings Button - Only in Chat Screen */}
         {conversationId && (

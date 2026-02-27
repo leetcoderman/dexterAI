@@ -12,7 +12,10 @@ import {
   Conversation,
   ConversationSummary,
   ChatMessage,
-  Memory
+  Memory,
+  AgentRequest,
+  AgentToolEvent,
+  AgentApprovalRequest
 } from '@dexterai/registry-types';
 
 type UnsubscribeFn = () => void;
@@ -53,6 +56,15 @@ interface DexteraiAPI {
       filters: Electron.FileFilter[];
     }): Promise<{ success: boolean; filePath?: string; error?: string }>;
   };
+  fs: {
+    openFolder(): Promise<{ rootPath: string; name: string } | null>;
+    readDir(args: { rootPath: string; ignorePatterns?: string[] }): Promise<any[]>;
+    readDirShallow(args: { dirPath: string; rootPath: string }): Promise<any[]>;
+    readFile(args: { filePath: string; rootPath: string }): Promise<{ content: string; size: number } | { error: string }>;
+    writeFile(args: { filePath: string; rootPath: string; content: string }): Promise<{ success: boolean; error?: string }>;
+    stat(args: { filePath: string; rootPath: string }): Promise<{ size: number; modified: string; isDir: boolean; extension: string } | { error: string }>;
+    search(args: { rootPath: string; query: string; filePattern?: string }): Promise<{ results: { filePath: string; line: number; text: string }[]; truncated: boolean }>;
+  };
 
   conversations: {
     list(): Promise<ConversationSummary[]>;
@@ -88,6 +100,18 @@ interface DexteraiAPI {
     }): Promise<void>;
     cancel(requestId: string): Promise<void>;
   };
+  agent: {
+    send(request: AgentRequest): Promise<void>;
+    cancel(requestId: string): Promise<void>;
+    approve(approvalId: string): Promise<void>;
+    reject(approvalId: string): Promise<void>;
+  };
+  terminal: {
+    create(args: { id: string; cwd: string; shell?: string }): Promise<{ id: string; error?: string }>;
+    write(args: { id: string; data: string }): void;
+    resize(args: { id: string; cols: number; rows: number }): void;
+    dispose(args: { id: string }): Promise<void>;
+  };
   memory: {
     list(): Promise<Memory[]>;
     save(memory: { id?: string; key: string; content: string; source_conversation_id?: string }): Promise<Memory | null>;
@@ -97,6 +121,9 @@ interface DexteraiAPI {
   };
   settings: {
     deleteData(mode: 'chat' | 'keys_analytics' | 'everything'): Promise<{ success: boolean; error?: string }>;
+  };
+  app: {
+    openWindow(): Promise<void>;
   };
   zoom: {
     setFactor(factor: number): void;
@@ -112,6 +139,10 @@ interface DexteraiAPI {
   on(channel: 'chat:title-updated', handler: (data: { conversationId: string; title: string }) => void): UnsubscribeFn;
   on(channel: 'registry:updated', handler: (version: string) => void): UnsubscribeFn;
   on(channel: 'job:progress', handler: (progress: JobProgress) => void): UnsubscribeFn;
+  on(channel: 'agent:tool-result', handler: (data: AgentToolEvent) => void): UnsubscribeFn;
+  on(channel: 'agent:approval-required', handler: (data: AgentApprovalRequest) => void): UnsubscribeFn;
+  on(channel: 'terminal:data', handler: (data: { id: string; data: string }) => void): UnsubscribeFn;
+  on(channel: 'terminal:exit', handler: (data: { id: string; exitCode: number }) => void): UnsubscribeFn;
 }
 
 const api: DexteraiAPI = {
@@ -145,6 +176,15 @@ const api: DexteraiAPI = {
     openAudioPicker: () => ipcRenderer.invoke('files:openAudioPicker'),
     saveFile: (args) => ipcRenderer.invoke('files:saveFile', args)
   },
+  fs: {
+    openFolder: () => ipcRenderer.invoke('fs:openFolder'),
+    readDir: (args) => ipcRenderer.invoke('fs:readDir', args),
+    readDirShallow: (args) => ipcRenderer.invoke('fs:readDirShallow', args),
+    readFile: (args) => ipcRenderer.invoke('fs:readFile', args),
+    writeFile: (args) => ipcRenderer.invoke('fs:writeFile', args),
+    stat: (args) => ipcRenderer.invoke('fs:stat', args),
+    search: (args) => ipcRenderer.invoke('fs:search', args)
+  },
   conversations: {
     list: () => ipcRenderer.invoke('conversations:list'),
     get: (id) => ipcRenderer.invoke('conversations:get', id),
@@ -164,6 +204,18 @@ const api: DexteraiAPI = {
     send: (request) => ipcRenderer.invoke('chat:send', request),
     cancel: (requestId) => ipcRenderer.invoke('chat:cancel', requestId)
   },
+  agent: {
+    send: (request) => ipcRenderer.invoke('agent:send', request),
+    cancel: (requestId) => ipcRenderer.invoke('agent:cancel', requestId),
+    approve: (approvalId) => ipcRenderer.invoke('agent:approve', approvalId),
+    reject: (approvalId) => ipcRenderer.invoke('agent:reject', approvalId)
+  },
+  terminal: {
+    create: (args) => ipcRenderer.invoke('terminal:create', args),
+    write: (args) => ipcRenderer.send('terminal:write', args),
+    resize: (args) => ipcRenderer.send('terminal:resize', args),
+    dispose: (args) => ipcRenderer.invoke('terminal:dispose', args)
+  },
   memory: {
     list: () => ipcRenderer.invoke('memory:list'),
     save: (memory) => ipcRenderer.invoke('memory:save', memory),
@@ -173,6 +225,9 @@ const api: DexteraiAPI = {
   },
   settings: {
     deleteData: (mode) => ipcRenderer.invoke('settings:deleteData', mode)
+  },
+  app: {
+    openWindow: () => ipcRenderer.invoke('app:openWindow')
   },
   zoom: {
     setFactor: (factor: number) => webFrame.setZoomFactor(factor),

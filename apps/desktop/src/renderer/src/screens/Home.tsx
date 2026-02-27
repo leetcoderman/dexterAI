@@ -1,85 +1,123 @@
 import { useNavigate } from 'react-router-dom'
-import { MessageSquare, Code2, Image, Mic, Volume2, ArrowRight } from 'lucide-react'
+import { Plus, MessageSquare, Zap, Library, Settings, Code2, ArrowRight } from 'lucide-react'
+import { cn } from '@dexterai/shared-utils'
 
-const CATEGORIES = [
+const DASHBOARD_ACTIONS = [
   {
-    id: 'text_generation',
-    label: 'Text Generation',
-    description: 'Chat, reasoning, summarisation, and standard text completions.',
-    icon: MessageSquare,
-    gradient: 'from-blue-500/20 to-blue-600/5',
-    iconColor: 'text-blue-400'
+    id: 'new_chat',
+    label: '+ New Chat',
+    description: 'Start a fresh conversation with any AI model.',
+    icon: Plus,
+    path: '/chat/new', // handled by onClick
+    color: 'text-primary',
+    bg: 'bg-primary/10'
   },
   {
-    id: 'code_generation',
-    label: 'Code Generation',
-    description: 'Code completion, refactoring, debugging, and logic generation.',
+    id: 'code',
+    label: 'Code',
+    description: 'Open the agentic coding workspace with file access.',
     icon: Code2,
-    gradient: 'from-violet-500/20 to-violet-600/5',
-    iconColor: 'text-violet-400'
+    path: '/code',
+    color: 'text-violet-400',
+    bg: 'bg-violet-400/10'
   },
   {
-    id: 'image_generation',
-    label: 'Image Generation',
-    description: 'Generate high-quality images from text prompts.',
-    icon: Image,
-    gradient: 'from-pink-500/20 to-pink-600/5',
-    iconColor: 'text-pink-400'
+    id: 'conversations',
+    label: 'Conversations',
+    description: 'Browser and search your past chat history.',
+    icon: MessageSquare,
+    path: '/chat',
+    color: 'text-blue-400',
+    bg: 'bg-blue-400/10'
   },
   {
-    id: 'audio_transcription',
-    label: 'Audio Transcription',
-    description: 'Transcribe or translate audio files with word-level timestamps.',
-    icon: Mic,
-    gradient: 'from-amber-500/20 to-amber-600/5',
-    iconColor: 'text-amber-400'
+    id: 'providers',
+    label: 'Connect API Keys',
+    description: 'Manage keys for OpenAI, Anthropic, Gemini, and more.',
+    icon: Zap,
+    path: '/providers',
+    color: 'text-orange-400',
+    bg: 'bg-orange-400/10'
   },
   {
-    id: 'text_to_speech',
-    label: 'Text to Speech',
-    description: 'Convert text into natural, human-like speech with multiple voice options.',
-    icon: Volume2,
-    gradient: 'from-teal-500/20 to-teal-600/5',
-    iconColor: 'text-teal-400'
+    id: 'catalogue',
+    label: 'Model Catalogue',
+    description: 'Explore 190+ supported models across all providers.',
+    icon: Library,
+    path: '/catalogue',
+    color: 'text-teal-400',
+    bg: 'bg-teal-400/10'
+  },
+  {
+    id: 'settings',
+    label: 'Settings',
+    description: 'Configure appearance, zoom, and data management.',
+    icon: Settings,
+    path: '/settings',
+    color: 'text-gray-400',
+    bg: 'bg-gray-400/10'
   }
 ]
 
 export default function Home() {
   const navigate = useNavigate()
 
+  const handleAction = async (action: typeof DASHBOARD_ACTIONS[0]) => {
+    if (action.id === 'new_chat') {
+      const conv = await window.dexterai.conversations.create()
+      if (conv) navigate(`/chat/${conv.id}`)
+    } else {
+      navigate(action.path)
+    }
+  }
+
   return (
-    <div className="h-full overflow-y-auto p-8">
-      <div className="max-w-4xl mx-auto animate-fade-in">
-        <div className="mb-10">
-          <h1 className="text-2xl font-bold tracking-tight mb-2">Use-case Gallery</h1>
-          <p className="text-sm text-text-muted">
-            Select a workspace category to start testing AI models.
+    <div className="flex flex-col h-full bg-background overflow-y-auto">
+      {/* Hero Section */}
+      <div className="px-8 pt-12 pb-8 max-w-6xl mx-auto w-full">
+        <div className="flex flex-col items-center text-center space-y-4 animate-fade-in">
+          <h1 className="text-4xl font-extrabold tracking-tight text-text sm:text-5xl">
+            Welcome to <span className="text-primary">dexterAI</span>
+          </h1>
+          <p className="text-base text-text-muted max-w-2xl leading-relaxed">
+            Your unified workbench for cutting-edge AI. Prompt, code, and compare models with project-aware tools and premium performance.
           </p>
         </div>
+      </div>
 
-        <div className="grid grid-cols-2 gap-4">
-          {CATEGORIES.map(({ id, label, description, icon: Icon, gradient, iconColor }) => (
+      {/* Grid Section */}
+      <div className="flex-1 px-8 pb-12 max-w-6xl mx-auto w-full">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-slide-up">
+          {DASHBOARD_ACTIONS.map((action) => (
             <button
-              key={id}
-              onClick={() => navigate(`/catalogue?category=${id}`)}
-              className="group relative p-5 rounded-xl bg-surface border border-border-subtle hover:border-primary/40 hover:shadow-glow cursor-pointer transition-all duration-200 text-left overflow-hidden"
+              key={action.id}
+              onClick={() => handleAction(action)}
+              className={cn(
+                'group relative flex flex-col items-center text-center p-8 rounded-2xl transition-all duration-300 border-2',
+                'bg-surface border-border-subtle hover:border-primary/30 hover:shadow-glow-primary/5'
+              )}
             >
-              {/* Gradient backdrop */}
-              <div
-                className={`absolute inset-0 bg-gradient-to-br ${gradient} opacity-0 group-hover:opacity-100 transition-opacity duration-300`}
-              />
+              {/* Icon Container */}
+              <div className={cn(
+                "w-16 h-16 mb-6 rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300",
+                action.bg,
+                action.color
+              )}>
+                <action.icon className="w-8 h-8" />
+              </div>
 
-              <div className="relative">
-                <div className={`w-10 h-10 rounded-lg bg-elevated flex items-center justify-center mb-3 ${iconColor}`}>
-                  <Icon className="w-5 h-5" />
-                </div>
-                <h3 className="font-semibold text-[15px] mb-1.5 text-text group-hover:text-white transition-colors">
-                  {label}
-                </h3>
-                <p className="text-xs text-text-muted leading-relaxed mb-3">{description}</p>
-                <div className="flex items-center gap-1 text-xs font-medium text-primary opacity-0 group-hover:opacity-100 transition-opacity">
-                  Browse models <ArrowRight className="w-3 h-3" />
-                </div>
+              {/* Content */}
+              <h3 className="text-lg font-bold text-text mb-2 group-hover:text-primary transition-colors">
+                {action.label}
+              </h3>
+              <p className="text-xs text-text-muted leading-relaxed px-2">
+                {action.description}
+              </p>
+
+              {/* Action CTA */}
+              <div className="mt-8 flex items-center gap-2 text-primary text-sm font-semibold opacity-0 group-hover:opacity-100 transition-all translate-y-2 group-hover:translate-y-0 duration-300">
+                Get Started
+                <ArrowRight className="w-4 h-4" />
               </div>
             </button>
           ))}

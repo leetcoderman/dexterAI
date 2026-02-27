@@ -160,6 +160,18 @@ async function autoTitle(
   firstUserMessage: string
 ) {
   try {
+    // Wait a brief moment for the assistant message to be persisted by the renderer
+    await new Promise((resolve) => setTimeout(resolve, 1500))
+
+    const db = getDatabase()
+    const assistantMsg = db
+      .prepare(
+        "SELECT content FROM messages WHERE conversation_id = ? AND role = 'assistant' ORDER BY created_at ASC LIMIT 1"
+      )
+      .get(conversationId) as { content: string } | undefined
+
+    const assistantContent = assistantMsg?.content || ''
+
     const adapter = AdapterRegistry.get(providerId)
     const credentials = await CredentialStore.get(providerId)
 
@@ -169,6 +181,13 @@ async function autoTitle(
       title += chunk.text ?? ''
     })
 
+    const prompt = `You are a conversation titler. Based on this short exchange, generate a concise, descriptive title (3-6 words).
+
+User: "${firstUserMessage.slice(0, 300)}"
+Assistant: "${assistantContent.slice(0, 500)}"
+
+Respond ONLY with the title. No quotes, no markdown, no punctuation at the end.`
+
     await adapter.execute(
       {
         requestId: `title_${Date.now()}`,
@@ -176,25 +195,20 @@ async function autoTitle(
         providerId,
         category: 'text_generation',
         params: {
-          messages: [
-            {
-              role: 'user',
-              content: `Generate a short title (3-6 words) for a conversation that starts with this message: "${firstUserMessage.slice(0, 200)}". Reply with just the title, no quotes or punctuation.`
-            }
-          ],
-          temperature: 0.3,
-          maxTokens: 20
+          messages: [{ role: 'user', content: prompt }],
+          temperature: 0.2,
+          maxTokens: 25
         }
       },
       credentials,
       titleEmitter
     )
 
-    title = title.replace(/^["']|["']$/g, '').trim()
-    if (title) {
-      const db = getDatabase()
+    title = title.replace(/^["']|["']$/g, '').replace(/\.$/, '').trim()
+    if (title && title.length < 100) {
       db.prepare('UPDATE conversations SET title = ? WHERE id = ?').run(title, conversationId)
       sender.send('chat:title-updated', { conversationId, title })
+      console.log(`[Auto-Title] Generated: "${title}" for ${conversationId}`)
     }
   } catch (e) {
     console.error('Auto-title generation failed:', e)

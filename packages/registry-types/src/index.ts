@@ -30,6 +30,14 @@ export interface RegistryModel {
     pricing?: RegistryPricing;
     pricing_updated?: string;
     supported_features?: string[];
+    knowledge_cutoff?: string;
+    capabilities?: string[];
+    performance_metrics?: {
+        speed: number | string;
+        reasoning: number;
+        coding: number;
+    };
+    description_long?: string;
 }
 
 export interface ProviderConfig {
@@ -186,4 +194,57 @@ export interface ChatRequest {
     providerId: string;
     messages: { role: string; content: string }[];
     params: Record<string, any>;
+}
+
+// v3: Agentic Tool System
+
+export interface ToolDefinition {
+    name: string;
+    description: string;
+    parameters: Record<string, any>; // JSON Schema
+}
+
+export interface ToolCall {
+    id: string;
+    name: string;
+    arguments: Record<string, any>;
+}
+
+export interface ToolResult {
+    toolCallId: string;
+    name: string;
+    result: string;
+    isError?: boolean;
+}
+
+export interface AgentRequest {
+    conversationId: string;
+    requestId: string;
+    modelId: string;
+    providerId: string;
+    messages: { role: string; content: string }[];
+    params: Record<string, any>;
+    projectRoot: string;
+}
+
+export interface AgentToolEvent {
+    requestId: string;
+    toolCall: ToolCall;
+    result: ToolResult;
+}
+
+// v3 Phase 4: Human-in-the-Loop Approval
+
+export interface AgentApprovalRequest {
+    requestId: string;
+    approvalId: string;
+    toolCall: ToolCall;
+    approvalType: 'file_write' | 'command';
+    // File write fields
+    filePath?: string;
+    oldContent?: string;
+    newContent?: string;
+    // Command fields
+    command?: string;
+    cwd?: string;
 }

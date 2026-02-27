@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAppStore } from './store';
+import { initStreamingManager } from './store/streaming-manager';
 import AppLayout from './components/layout/AppLayout';
 import Home from './screens/Home';
 import Catalogue from './screens/Catalogue';
@@ -11,7 +12,9 @@ import ChatScreen from './screens/ChatScreen';
 import Settings from './screens/Settings';
 import MemoryScreen from './screens/MemoryScreen';
 import ProvidersScreen from './screens/ProvidersScreen';
+import CodeWorkspaceScreen from './screens/CodeWorkspaceScreen';
 import Onboarding from './screens/Onboarding';
+import ModelDetailScreen from './screens/ModelDetailScreen';
 
 function App(): React.JSX.Element {
   const isOnboarded = useAppStore((state) => state.isOnboarded);
@@ -80,6 +83,12 @@ function App(): React.JSX.Element {
     return () => unsub?.();
   }, [setZoomLevel]);
 
+  // Initialize global streaming manager (IPC listeners + drain loop)
+  useEffect(() => {
+    const cleanup = initStreamingManager()
+    return cleanup
+  }, [])
+
   // Hydrate state from DB on app startup
   useEffect(() => {
     if (isOnboarded) {
@@ -98,14 +107,17 @@ function App(): React.JSX.Element {
         </>
       ) : (
         <Route path="/" element={<AppLayout />}>
-          <Route index element={<ChatListScreen />} />
-          <Route path="explore" element={<Home />} />
+          <Route index element={<Home />} />
+          <Route path="explore" element={<Catalogue />} />
+          <Route path="chat" element={<ChatListScreen />} />
           <Route path="catalogue" element={<Catalogue />} />
+          <Route path="catalogue/:modelId" element={<ModelDetailScreen />} />
           <Route path="provider/:providerId" element={<Connection />} />
-          <Route path="test/:modelId" element={<TestWorkspace />} />
+          <Route path="test/*" element={<TestWorkspace />} />
           <Route path="chat" element={<ChatListScreen />} />
           <Route path="chat/:conversationId" element={<ChatScreen />} />
           <Route path="memory" element={<MemoryScreen />} />
+          <Route path="code" element={<CodeWorkspaceScreen />} />
           <Route path="providers" element={<ProvidersScreen />} />
           <Route path="settings" element={<Settings />} />
           <Route path="*" element={<Navigate to="/" replace />} />

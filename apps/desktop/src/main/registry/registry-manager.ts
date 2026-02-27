@@ -16,6 +16,15 @@ export const RegistryManager = {
     },
 
     async loadRegistry(): Promise<Registry> {
+        // 0. Development Override: Always use local registry if not packaged
+        if (!app.isPackaged) {
+            try {
+                return JSON.parse(await fs.readFile(BUNDLED_REGISTRY_PATH, 'utf8'));
+            } catch (e) {
+                console.warn('Development mode: Failed to load bundled registry from path:', BUNDLED_REGISTRY_PATH, e);
+            }
+        }
+
         // 1. Try remote registry
         try {
             const response = await fetch(REGISTRY_CDN_URL, {
@@ -41,20 +50,22 @@ export const RegistryManager = {
             // Network unavailable — fall through
         }
 
-        // 2. Try local cache
+        // 2. Try local cache vs bundled fallback
+        let cached: Registry | null = null;
         try {
-            const cached = JSON.parse(await fs.readFile(this.getCachePath(), 'utf8'));
-            return cached;
-        } catch {
-            // No cache — fall through
+            cached = JSON.parse(await fs.readFile(this.getCachePath(), 'utf8'));
+        } catch { }
+
+        let bundled: Registry | null = null;
+        try {
+            bundled = JSON.parse(await fs.readFile(BUNDLED_REGISTRY_PATH, 'utf8'));
+        } catch { }
+
+        // Comparison: return the newer of the two
+        if (cached && bundled) {
+            return this.isNewerVersion(bundled.registry_version, cached.registry_version) ? bundled : cached;
         }
 
-        // 3. Bundled fallback
-        try {
-            return JSON.parse(await fs.readFile(BUNDLED_REGISTRY_PATH, 'utf8'));
-        } catch (e) {
-            // If we are developing locally and don't have it bundled yet, return empty structure
-            return { registry_version: "1.0.0", models: [] };
-        }
+        return cached || bundled || { registry_version: "1.0.0", models: [] };
     }
 };

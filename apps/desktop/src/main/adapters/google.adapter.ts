@@ -1,5 +1,5 @@
-import { BaseProviderAdapter, IPCEmitter } from './base.adapter';
-import { TestRequest, ProviderError, VerifyResult, ProviderCredentials } from '@dexterai/registry-types';
+import { BaseProviderAdapter, IPCEmitter, ToolCallResult } from './base.adapter';
+import { TestRequest, ProviderError, VerifyResult, ProviderCredentials, ToolDefinition } from '@dexterai/registry-types';
 import { GoogleGenerativeAI, GenerationConfig } from '@google/generative-ai';
 
 export class GoogleAdapter extends BaseProviderAdapter {
@@ -44,6 +44,68 @@ export class GoogleAdapter extends BaseProviderAdapter {
         }
     }
 
+    private mapMessagesToGeminiContents(messages: any[]): { contents: any[], systemInstruction: string } {
+        let systemInstruction = '';
+        const contents: any[] = [];
+
+        messages.forEach((m: any) => {
+            if (m.role === 'system') {
+                systemInstruction += (systemInstruction ? '\n' : '') + m.content;
+            } else if (m.role === 'tool' || m.role === 'function') {
+                contents.push({
+                    role: 'user',
+                    parts: [{
+                        functionResponse: {
+                            name: m.name || m.tool_call_id || 'unknown_tool',
+                            response: { result: m.content }
+                        }
+                    }]
+                });
+            } else {
+                const parts: any[] = [];
+                const toolCalls = m.tool_calls || m.toolCalls;
+
+                if (Array.isArray(toolCalls)) {
+                    toolCalls.forEach((tc: any) => {
+                        let args = tc.arguments || tc.function?.arguments || {};
+                        if (typeof args === 'string') {
+                            try { args = JSON.parse(args); } catch (e) { args = {}; }
+                        }
+
+                        const partToPush: any = {
+                            functionCall: {
+                                name: tc.name || tc.function?.name || 'unknown_tool',
+                                args: args
+                            }
+                        };
+
+                        // Restore the Thought Signature for Gemini 3
+                        if (tc.thoughtSignature) {
+                            partToPush.thought_signature = tc.thoughtSignature;
+                            partToPush.thoughtSignature = tc.thoughtSignature;
+                        }
+
+                        parts.push(partToPush);
+                    });
+                }
+
+                const rawContent = typeof m.content === 'string' ? m.content.trim() : '';
+                if (rawContent.length > 0) {
+                    parts.push({ text: m.content });
+                } else if (parts.length === 0) {
+                    parts.push({ text: '[Empty content]' });
+                }
+
+                contents.push({
+                    role: m.role === 'assistant' ? 'model' : 'user',
+                    parts: parts
+                });
+            }
+        });
+
+        return { contents, systemInstruction };
+    }
+
     async execute(request: TestRequest, credentials: ProviderCredentials, emitter: IPCEmitter): Promise<void> {
         const { modelId, params } = request;
         const genAI = new GoogleGenerativeAI(credentials.apiKey);
@@ -54,49 +116,32 @@ export class GoogleAdapter extends BaseProviderAdapter {
         let completionTokens = 0;
 
         try {
-            const messages = params.messages || [];
-            let systemInstruction = params.systemPrompt || '';
-            const contents: any[] = [];
+            const { contents, systemInstruction } = this.mapMessagesToGeminiContents(params.messages || []);
 
-            messages.forEach((m: any) => {
-                if (m.role === 'system') {
-                    systemInstruction = m.content;
-                } else {
-                    contents.push({
-                        role: m.role === 'assistant' ? 'model' : 'user',
-                        parts: [{ text: m.content }]
-                    });
-                }
-            });
-
-            // Fallback for single prompt if no messages provided
             if (contents.length === 0 && params.prompt) {
+                const rawPrompt = typeof params.prompt === 'string' ? params.prompt.trim() : String(params.prompt).trim();
+                const safePrompt = rawPrompt.length > 0 ? String(params.prompt) : '[Empty content]';
+
                 contents.push({
                     role: 'user',
-                    parts: [{ text: String(params.prompt) }]
+                    parts: [{ text: safePrompt }]
                 });
             }
 
-            const modelConfig: any = {
-                model: modelId
-            };
-
-            if (systemInstruction) {
-                modelConfig.systemInstruction = systemInstruction;
-            }
+            const modelConfig: any = { model: modelId };
+            if (systemInstruction) modelConfig.systemInstruction = systemInstruction;
 
             const model = genAI.getGenerativeModel(modelConfig);
 
             const generationConfig: GenerationConfig = {
                 temperature: Number(params.temperature ?? 0.7),
-                maxOutputTokens: Number(params.maxTokens ?? 8192),
+                maxOutputTokens: Number(params.maxTokens ?? 32768),
                 topP: Number(params.topP ?? 1),
             };
 
-            // Thinking level config. According to Gemini 3.1 preview docs, it might be nested in generationConfig.
             if (params.thinkingLevel && params.thinkingLevel !== 'none') {
                 (generationConfig as any).thinkingConfig = {
-                    thinkingBudgetTokens: params.maxTokens ? Math.floor(Number(params.maxTokens) * 0.5) : 1024 // arbitrary logic for now
+                    thinkingBudgetTokens: params.maxTokens ? Math.floor(Number(params.maxTokens) * 0.5) : 1024
                 };
             }
 
@@ -108,7 +153,6 @@ export class GoogleAdapter extends BaseProviderAdapter {
                 generationConfig.stopSequences = params.stopSequences;
             }
 
-            // Execute Streaming
             const resultStream = await this.withRetry(() =>
                 model.generateContentStream({
                     contents,
@@ -120,16 +164,10 @@ export class GoogleAdapter extends BaseProviderAdapter {
             let finishReason = 'stop';
 
             for await (const chunk of resultStream.stream) {
-                if (!firstTokenTime) {
-                    firstTokenTime = Date.now();
-                }
+                if (!firstTokenTime) firstTokenTime = Date.now();
 
                 const chunkText = chunk.text();
-                // Google "Thinking" models often put the thought in a specific part if available.
-                // The current SDK might consolidate them into text() or have a separate field.
-                // We'll treat standard text as text, but if we detect bracketed thoughts or specific fields, we handle them.
                 const thought = (chunk as any).thought || '';
-
                 accumulatedText += chunkText;
 
                 emitter.emit('test:chunk', {
@@ -137,10 +175,6 @@ export class GoogleAdapter extends BaseProviderAdapter {
                     text: chunkText,
                     thought: thought
                 });
-
-                if (chunk.promptFeedback) {
-                    // We could log blockReason if it hit safety issues
-                }
 
                 if (chunk.candidates && chunk.candidates[0]?.finishReason) {
                     finishReason = chunk.candidates[0].finishReason.toLowerCase();
@@ -177,5 +211,73 @@ export class GoogleAdapter extends BaseProviderAdapter {
             };
             emitter.emit('test:error', providerError);
         }
+    }
+
+    async executeWithTools(
+        request: TestRequest,
+        credentials: ProviderCredentials,
+        emitter: IPCEmitter,
+        tools: ToolDefinition[]
+    ): Promise<ToolCallResult> {
+        const { modelId, params } = request;
+        const genAI = new GoogleGenerativeAI(credentials.apiKey);
+
+        const { contents, systemInstruction } = this.mapMessagesToGeminiContents(params.messages || []);
+
+        const googleTools = [{
+            functionDeclarations: tools.map((t) => ({
+                name: t.name,
+                description: t.description,
+                parameters: t.parameters as any
+            }))
+        }] as any;
+
+        const modelConfig: any = { model: modelId };
+        if (systemInstruction) modelConfig.systemInstruction = systemInstruction;
+
+        const model = genAI.getGenerativeModel(modelConfig);
+
+        const generationConfig: GenerationConfig = {
+            temperature: Number(params.temperature ?? 0.7),
+            maxOutputTokens: Number(params.maxTokens ?? 32768)
+        };
+
+        const result = await this.withRetry(() =>
+            model.generateContent({
+                contents,
+                generationConfig,
+                tools: googleTools
+            })
+        );
+
+        const response = result.response;
+        let text = '';
+        let thought = '';
+        const toolCalls: { id: string; name: string; arguments: Record<string, any>, thoughtSignature?: string }[] = [];
+
+        for (const candidate of response.candidates || []) {
+            for (const part of candidate.content?.parts || []) {
+                if (part.text) {
+                    text += part.text;
+                    emitter.emit('test:chunk', { requestId: request.requestId, text: part.text });
+                }
+                if (part.functionCall) {
+                    toolCalls.push({
+                        id: `google_tc_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+                        name: part.functionCall.name,
+                        arguments: part.functionCall.args as Record<string, any>,
+                        // Capture the Thought Signature from the part
+                        thoughtSignature: (part as any).thought_signature || (part as any).thoughtSignature
+                    });
+                }
+            }
+        }
+
+        const resolvedModel = (response as any).modelVersion || '';
+        const promptTokens = response.usageMetadata?.promptTokenCount || 0;
+        const completionTokens = response.usageMetadata?.candidatesTokenCount || 0;
+        const finishReason = response.candidates?.[0]?.finishReason?.toLowerCase() || 'stop';
+
+        return { text, thought, toolCalls, finishReason, promptTokens, completionTokens, resolvedModel };
     }
 }

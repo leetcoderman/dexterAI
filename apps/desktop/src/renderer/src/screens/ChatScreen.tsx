@@ -1,7 +1,8 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import { useParams } from 'react-router-dom'
 import { Loader2 } from 'lucide-react'
 import { useAppStore } from '../store'
+import { startStreamSession, attachView, detachView, cancelSession, getActiveSession } from '../store/streaming-manager'
 import ChatInput from '../components/chat/ChatInput'
 import MessageBubble from '../components/chat/MessageBubble'
 import SettingsDrawer from '../components/chat/SettingsDrawer'
@@ -23,23 +24,18 @@ export default function ChatScreen() {
     setIsChatSettingsOpen
   } = useAppStore()
 
+  // Read streaming session from global manager via Zustand
+  const streamSession = useAppStore(
+    (s) => conversationId ? s.streamingSessions[conversationId] : undefined
+  )
+  const isStreaming = streamSession?.status === 'streaming'
+
   const [messages, setMessages] = useState<ChatMessage[]>([])
-  const [isStreaming, setIsStreaming] = useState(false)
   const [loading, setLoading] = useState(true)
   const [settings, setSettings] = useState<ConversationSettings>({})
 
-  const requestIdRef = useRef<string | null>(null)
-  const assistantMsgIdRef = useRef<string | null>(null)
-  const accumulatedTextRef = useRef('')
-  const accumulatedThoughtRef = useRef('')
   const endOfMessagesRef = useRef<HTMLDivElement>(null)
   const settingsRef = useRef<ConversationSettings>({})
-
-  // v2.3 Streaming Buffer refs
-  const textBufferRef = useRef('')
-  const thoughtBufferRef = useRef('')
-  const statsRef = useRef({ startTime: 0, firstChunkTime: 0, tokensSent: 0 })
-  const drainIntervalRef = useRef<any>(null)
 
   // Load models once
   useEffect(() => {
@@ -62,150 +58,44 @@ export default function ChatScreen() {
     })
   }, [conversationId])
 
+  // Attach/detach view for streaming manager
+  useEffect(() => {
+    if (!conversationId) return
+    attachView(conversationId)
+    return () => detachView(conversationId)
+  }, [conversationId])
+
+  // When stream completes (status goes to 'done' or 'error'), reload messages from DB
+  // so the final persisted content replaces the live display
+  useEffect(() => {
+    if (streamSession?.status === 'done' || streamSession?.status === 'error') {
+      if (conversationId) {
+        window.dexterai.messages.list(conversationId).then(setMessages)
+      }
+    }
+  }, [streamSession?.status])
+
+  // Merge streaming display text into messages for rendering
+  const displayMessages = useMemo(() => {
+    if (!streamSession || !streamSession.assistantMsgId) return messages
+    if (streamSession.status !== 'streaming') return messages
+
+    return messages.map((m) => {
+      if (m.id === streamSession.assistantMsgId) {
+        return {
+          ...m,
+          content: streamSession.displayText,
+          metadata_json: streamSession.displayMeta || m.metadata_json
+        }
+      }
+      return m
+    })
+  }, [messages, streamSession?.displayText, streamSession?.displayMeta, streamSession?.assistantMsgId, streamSession?.status])
+
   // Auto-scroll
   useEffect(() => {
     endOfMessagesRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages])
-
-  // IPC subscriptions — ref-based, registered once
-  useEffect(() => {
-    // Start the buffer drainer loop
-    drainIntervalRef.current = setInterval(() => {
-      if (!requestIdRef.current || !assistantMsgIdRef.current) return
-
-      const textToDrain = textBufferRef.current.slice(0, 8) // Reveal up to 8 chars per tick
-      const thoughtToDrain = thoughtBufferRef.current.slice(0, 12)
-
-      if (textToDrain || thoughtToDrain) {
-        textBufferRef.current = textBufferRef.current.slice(textToDrain.length)
-        thoughtBufferRef.current = thoughtBufferRef.current.slice(thoughtToDrain.length)
-
-        accumulatedTextRef.current += textToDrain
-        accumulatedThoughtRef.current += thoughtToDrain
-
-        const now = Date.now()
-        const elapsed = (now - statsRef.current.startTime) / 1000
-        const tokensPerSec = elapsed > 0 ? (accumulatedTextRef.current.length / 4) / elapsed : 0
-
-        setMessages((prev) => {
-          const next = [...prev]
-          const idx = next.findIndex((m) => m.id === assistantMsgIdRef.current)
-          if (idx !== -1) {
-            const meta = next[idx].metadata_json ? JSON.parse(next[idx].metadata_json) : {}
-            next[idx] = {
-              ...next[idx],
-              content: accumulatedTextRef.current,
-              metadata_json: JSON.stringify({
-                ...meta,
-                thought: accumulatedThoughtRef.current,
-                speed: tokensPerSec.toFixed(1),
-                ttft: statsRef.current.firstChunkTime ? statsRef.current.firstChunkTime - statsRef.current.startTime : null,
-                isThinking: accumulatedThoughtRef.current.length > 0 && textBufferRef.current.length === 0 && accumulatedTextRef.current.length === 0
-              })
-            }
-          }
-          return next
-        })
-      }
-    }, 25) // 40fps smoothness
-
-    const unsubChunk = window.dexterai.on('chat:chunk', (data) => {
-      if (data.requestId !== requestIdRef.current) return
-
-      if (!statsRef.current.firstChunkTime) {
-        statsRef.current.firstChunkTime = Date.now()
-      }
-
-      if (data.text) textBufferRef.current += data.text
-      if (data.thought) thoughtBufferRef.current += data.thought
-    })
-
-    const unsubDone = window.dexterai.on('chat:done', (data) => {
-      if (data.requestId !== requestIdRef.current) return
-
-      // Flush any remains in buffer immediately
-      accumulatedTextRef.current += textBufferRef.current
-      accumulatedThoughtRef.current += thoughtBufferRef.current
-      textBufferRef.current = ''
-      thoughtBufferRef.current = ''
-
-      const msgId = assistantMsgIdRef.current
-      const finalText = accumulatedTextRef.current
-      const finalThought = accumulatedThoughtRef.current
-
-      // Persist final content to DB
-      if (msgId) {
-        const metadata = {
-          ttft: data.ttft,
-          totalTime: data.totalTime,
-          promptTokens: data.promptTokens,
-          completionTokens: data.completionTokens,
-          finishReason: data.finishReason,
-          resolvedModel: data.resolvedModel,
-          thought: finalThought
-        }
-        window.dexterai.messages.update(msgId, {
-          content: finalText,
-          token_count: data.completionTokens || 0,
-          metadata_json: JSON.stringify(metadata)
-        })
-
-        // Update local state so MessageBubble shows resolvedModel immediately
-        setMessages((prev) =>
-          prev.map((m) =>
-            m.id === msgId ? { ...m, content: finalText, metadata_json: JSON.stringify(metadata) } : m
-          )
-        )
-      }
-
-      requestIdRef.current = null
-      assistantMsgIdRef.current = null
-      accumulatedTextRef.current = ''
-      accumulatedThoughtRef.current = ''
-      setIsStreaming(false)
-    })
-
-    const unsubError = window.dexterai.on('chat:error', (data) => {
-      if (data.requestId !== requestIdRef.current) return
-      const msgId = assistantMsgIdRef.current
-      const errorText = accumulatedTextRef.current
-        ? accumulatedTextRef.current + `\n\n[Error: ${data.message}]`
-        : `[Error: ${data.message}]`
-
-      setMessages((prev) => {
-        const next = [...prev]
-        const idx = next.findIndex((m) => m.id === msgId)
-        if (idx !== -1) {
-          next[idx] = { ...next[idx], content: errorText }
-        }
-        return next
-      })
-
-      if (msgId) {
-        window.dexterai.messages.update(msgId, { content: errorText })
-      }
-
-      requestIdRef.current = null
-      assistantMsgIdRef.current = null
-      accumulatedTextRef.current = ''
-      accumulatedThoughtRef.current = ''
-      setIsStreaming(false)
-    })
-
-    const unsubTitle = window.dexterai.on('chat:title-updated', (data) => {
-      if (data.conversationId === conversationId) {
-        loadConversations()
-      }
-    })
-
-    return () => {
-      if (drainIntervalRef.current) clearInterval(drainIntervalRef.current)
-      unsubChunk()
-      unsubDone()
-      unsubError()
-      unsubTitle()
-    }
-  }, [])
+  }, [displayMessages])
 
   const handleSend = async (text: string) => {
     if (!conversationId || !selectedModelId || !selectedProviderId) return
@@ -230,16 +120,16 @@ export default function ChatScreen() {
     if (!assistantMsg) return
     setMessages((prev) => [...prev, assistantMsg])
 
-    // 3. Set refs synchronously
+    // 3. Register with streaming manager
     const reqId = `chat_${Date.now()}`
-    requestIdRef.current = reqId
-    assistantMsgIdRef.current = assistantMsg.id
-    accumulatedTextRef.current = ''
-    accumulatedThoughtRef.current = ''
-    textBufferRef.current = ''
-    thoughtBufferRef.current = ''
-    statsRef.current = { startTime: Date.now(), firstChunkTime: 0, tokensSent: 0 }
-    setIsStreaming(true)
+    startStreamSession({
+      requestId: reqId,
+      conversationId,
+      assistantMsgId: assistantMsg.id,
+      type: 'chat',
+      modelId: selectedModelId,
+      providerId: selectedProviderId
+    })
 
     // 4. Build message history for context
     const allMsgs = [...messages, userMsg]
@@ -263,20 +153,16 @@ export default function ChatScreen() {
         }
       })
     } catch (e: any) {
-      if (requestIdRef.current === reqId) {
-        const errorText = `[Error: ${e.message}]`
-        setMessages((prev) => {
-          const next = [...prev]
-          const idx = next.findIndex((m) => m.id === assistantMsg.id)
-          if (idx !== -1) next[idx] = { ...next[idx], content: errorText }
-          return next
-        })
+      // Error will be handled by the streaming manager's chat:error listener
+      // But if the IPC invoke itself throws (not adapter error), handle it:
+      const errorText = `[Error: ${e.message}]`
+      if (assistantMsg) {
         window.dexterai.messages.update(assistantMsg.id, { content: errorText })
-        requestIdRef.current = null
-        assistantMsgIdRef.current = null
-        accumulatedTextRef.current = ''
-        setIsStreaming(false)
       }
+      cancelSession(conversationId)
+      setMessages((prev) =>
+        prev.map((m) => m.id === assistantMsg.id ? { ...m, content: errorText } : m)
+      )
     }
 
     // Refresh sidebar conversation list
@@ -284,19 +170,12 @@ export default function ChatScreen() {
   }
 
   const handleStop = async () => {
-    if (requestIdRef.current) {
-      await window.dexterai.chat.cancel(requestIdRef.current)
-      // Persist partial content
-      if (assistantMsgIdRef.current && accumulatedTextRef.current) {
-        await window.dexterai.messages.update(assistantMsgIdRef.current, {
-          content: accumulatedTextRef.current
-        })
-      }
-      requestIdRef.current = null
-      assistantMsgIdRef.current = null
-      accumulatedTextRef.current = ''
-      setIsStreaming(false)
-    }
+    if (!conversationId) return
+    const session = getActiveSession(conversationId)
+    if (!session) return
+
+    await window.dexterai.chat.cancel(session.requestId)
+    cancelSession(conversationId)
   }
 
   const handleSettingsSave = (s: ConversationSettings) => {
@@ -361,19 +240,19 @@ export default function ChatScreen() {
     <div className="flex flex-col h-full relative">
       {/* Messages */}
       <div className="flex-1 overflow-y-auto p-6 space-y-6">
-        {messages.filter((m) => m.role !== 'system').length === 0 ? (
+        {displayMessages.filter((m) => m.role !== 'system').length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-center text-gray-400 space-y-3 py-16">
             <p className="text-lg font-medium">Start a conversation</p>
             <p className="text-sm">Select a model below and type your message.</p>
           </div>
         ) : (
-          messages.map((m, i) => (
+          displayMessages.map((m, i) => (
             <MessageBubble
               key={m.id}
               message={m}
-              isStreaming={isStreaming && m.id === assistantMsgIdRef.current}
-              isLast={i === messages.length - 1}
-              onRegenerate={m.role === 'assistant' && i === messages.length - 1 ? handleRegenerate : undefined}
+              isStreaming={isStreaming && m.id === streamSession?.assistantMsgId}
+              isLast={i === displayMessages.length - 1}
+              onRegenerate={m.role === 'assistant' && i === displayMessages.length - 1 ? handleRegenerate : undefined}
               onEdit={m.role === 'user' ? handleEditMessage : undefined}
             />
           ))

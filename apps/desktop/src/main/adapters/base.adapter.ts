@@ -1,4 +1,4 @@
-import { VerifyResult, TestRequest, ProviderCredentials, StreamChunk, EvaluationMetrics, ProviderError } from '@dexterai/registry-types';
+import { VerifyResult, TestRequest, ProviderCredentials, StreamChunk, EvaluationMetrics, ProviderError, ToolDefinition, ToolCall } from '@dexterai/registry-types';
 import { EventEmitter } from 'events';
 import { sleep } from '@dexterai/shared-utils';
 
@@ -14,6 +14,16 @@ export interface RateLimitInfo {
     limitType: string;
 }
 
+export interface ToolCallResult {
+    text: string;
+    thought: string;
+    toolCalls: ToolCall[];
+    finishReason: string;
+    promptTokens: number;
+    completionTokens: number;
+    resolvedModel: string;
+}
+
 export abstract class BaseProviderAdapter {
     abstract readonly providerId: string;
 
@@ -24,6 +34,20 @@ export abstract class BaseProviderAdapter {
         credentials: ProviderCredentials,
         emitter: IPCEmitter
     ): Promise<void>;
+
+    /**
+     * Execute a single LLM call with tool definitions, streaming text/thought chunks
+     * and returning any tool_calls the model wants to make.
+     * Adapters that support tool use override this.
+     */
+    async executeWithTools(
+        _request: TestRequest,
+        _credentials: ProviderCredentials,
+        _emitter: IPCEmitter,
+        _tools: ToolDefinition[]
+    ): Promise<ToolCallResult> {
+        throw new Error(`${this.providerId} adapter does not support tool use`)
+    }
 
     protected async withRetry<T>(
         fn: () => Promise<T>,

@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
-import { Search, Key, ChevronRight, Sparkles, Brain } from 'lucide-react'
+import { Search, Key, ChevronRight, Sparkles, Brain, Info } from 'lucide-react'
 import { cn } from '@dexterai/shared-utils'
 import { useAppStore } from '../store'
 import { useNavigate, useSearchParams } from 'react-router-dom'
@@ -209,8 +209,20 @@ export default function Catalogue() {
                     )}
                   </div>
 
-                  <div className="w-8 h-8 rounded-full bg-elevated flex items-center justify-center group-hover:bg-primary/10 group-hover:text-primary transition-all">
-                    <ChevronRight className="w-4 h-4" />
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        navigate(`/catalogue/${encodeURIComponent(model.id)}`)
+                      }}
+                      className="w-10 h-10 rounded-full bg-elevated/80 border border-border-subtle flex items-center justify-center hover:bg-primary/10 hover:text-primary hover:border-primary/30 transition-all active:scale-95 shrink-0"
+                      title="View Details"
+                    >
+                      <Info className="w-4.5 h-4.5" />
+                    </button>
+                    <div className="w-10 h-10 rounded-full bg-primary/5 text-primary/40 border border-primary/10 flex items-center justify-center group-hover:bg-primary group-hover:text-white group-hover:shadow-glow transition-all shrink-0">
+                      <ChevronRight className="w-5 h-5 transition-transform group-hover:translate-x-0.5" />
+                    </div>
                   </div>
                 </button>
               )

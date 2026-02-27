@@ -1,28 +1,20 @@
-import { useEffect } from 'react'
 import { cn } from '@dexterai/shared-utils'
-import { NavLink, useLocation, useNavigate } from 'react-router-dom'
+import { NavLink, useNavigate } from 'react-router-dom'
 import {
   Plus,
   MessageSquare,
   Settings,
   Brain,
-  Trash2,
   Compass,
   Library,
   Zap,
   PanelLeftClose,
   PanelLeftOpen,
-  Home
+  Home,
+  Code2
 } from 'lucide-react'
 import { useAppStore } from '../../store'
 
-function SectionLabel({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="px-3 pt-5 pb-1.5 text-[10px] font-semibold uppercase tracking-widest text-text-muted no-select">
-      {children}
-    </div>
-  )
-}
 
 function SidebarLink({
   to,
@@ -63,25 +55,8 @@ function SidebarLink({
 
 export default function Sidebar() {
   const navigate = useNavigate()
-  const location = useLocation()
-  const { conversations, loadConversations, sidebarCollapsed, toggleSidebar } = useAppStore()
+  const { sidebarCollapsed, toggleSidebar } = useAppStore()
 
-  useEffect(() => {
-    loadConversations()
-  }, [])
-
-  const handleNewChat = async () => {
-    const conv = await window.dexterai.conversations.create()
-    if (conv) navigate(`/chat/${conv.id}`)
-  }
-
-  const handleDeleteConv = async (id: string, e: React.MouseEvent) => {
-    e.stopPropagation()
-    e.preventDefault()
-    await window.dexterai.conversations.delete(id)
-    loadConversations()
-    if (location.pathname === `/chat/${id}`) navigate('/')
-  }
 
   const collapsed = sidebarCollapsed
 
@@ -126,7 +101,10 @@ export default function Sidebar() {
 
         {/* New Chat */}
         <button
-          onClick={handleNewChat}
+          onClick={async () => {
+            const conv = await window.dexterai.conversations.create()
+            if (conv) navigate(`/chat/${conv.id}`)
+          }}
           className={cn(
             "flex items-center gap-2.5 w-full rounded-lg text-[13px] font-medium text-text-secondary hover:text-text hover:bg-elevated transition-all",
             collapsed ? "px-2 py-2 justify-center" : "px-3 py-2"
@@ -158,56 +136,12 @@ export default function Sidebar() {
 
       <nav className={cn("flex-1 overflow-y-auto space-y-0.5", collapsed ? "px-1" : "px-2")}>
         {/* Conversations */}
-        {!collapsed && <SectionLabel>Conversations</SectionLabel>}
-        {conversations.slice(0, collapsed ? 5 : 15).map((conv) => {
-          const isActive = location.pathname === `/chat/${conv.id}`
-          return collapsed ? (
-            <NavLink
-              key={conv.id}
-              to={`/chat/${conv.id}`}
-              className={cn(
-                'flex items-center justify-center px-2 py-2 rounded-lg transition-all duration-150',
-                isActive
-                  ? 'bg-primary/10 text-primary border border-primary/20'
-                  : 'text-text-secondary hover:text-text hover:bg-elevated'
-              )}
-              title={conv.title || 'New Conversation'}
-            >
-              <MessageSquare className="w-3.5 h-3.5" />
-            </NavLink>
-          ) : (
-            <NavLink
-              key={conv.id}
-              to={`/chat/${conv.id}`}
-              className={cn(
-                'flex items-center gap-2 px-3 py-2 rounded-lg text-[13px] font-medium transition-all duration-150 group',
-                isActive
-                  ? 'bg-primary/10 text-primary border border-primary/20'
-                  : 'text-text-secondary hover:text-text hover:bg-elevated'
-              )}
-            >
-              <MessageSquare className="w-3.5 h-3.5 shrink-0" />
-              <span className="truncate flex-1">{conv.title || 'New Conversation'}</span>
-              <button
-                onClick={(e) => handleDeleteConv(conv.id, e)}
-                className={cn(
-                  'p-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity shrink-0',
-                  isActive ? 'hover:bg-primary/20 text-primary' : 'hover:bg-red-500/10 hover:text-red-500'
-                )}
-              >
-                <Trash2 className="w-3 h-3" />
-              </button>
-            </NavLink>
-          )
-        })}
-        {!collapsed && conversations.length > 15 && (
-          <NavLink
-            to="/"
-            className="flex items-center gap-2 px-3 py-1.5 text-[11px] font-medium text-text-muted hover:text-primary transition-colors mt-1"
-          >
-            Show more ({conversations.length - 15} hidden)...
-          </NavLink>
-        )}
+        <SidebarLink
+          to="/chat"
+          icon={MessageSquare}
+          label="Conversations"
+          collapsed={collapsed}
+        />
 
         {/* Connect API keys */}
         <div className="mt-4 pt-4 border-t border-border-subtle">
@@ -222,6 +156,7 @@ export default function Sidebar() {
 
         <SidebarLink to="/catalogue" icon={Library} label="Model Catalogue" collapsed={collapsed} />
         <SidebarLink to="/memory" icon={Brain} label="Memory" collapsed={collapsed} />
+        <SidebarLink to="/code" icon={Code2} label="Code" collapsed={collapsed} />
       </nav>
 
       {/* Footer */}

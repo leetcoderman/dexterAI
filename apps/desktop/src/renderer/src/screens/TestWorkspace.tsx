@@ -27,7 +27,8 @@ function deriveCategory(modelId: string): string {
 }
 
 export default function TestWorkspaceShell() {
-  const { modelId } = useParams<{ modelId: string }>()
+  const params = useParams()
+  const modelId = params['*'] || params.modelId
   const navigate = useNavigate()
   const location = useLocation()
   const connectedProviders = useAppStore((s) => s.connectedProviders)

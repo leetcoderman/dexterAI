@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Plus, MessageSquare, Trash2, Search } from 'lucide-react'
+import { Plus, MessageSquare, Trash2, Search, Loader2 } from 'lucide-react'
 import { useAppStore } from '../store'
+import EditableTitle from '../components/chat/EditableTitle'
 import type { ConversationSummary, ChatMessage } from '@dexterai/registry-types'
 
 function groupByDate(conversations: ConversationSummary[]) {
@@ -32,7 +33,7 @@ type SearchResult = ChatMessage & { conversation_title: string }
 
 export default function ChatListScreen() {
   const navigate = useNavigate()
-  const { conversations, loadConversations } = useAppStore()
+  const { conversations, loadConversations, streamingSessions } = useAppStore()
   const [search, setSearch] = useState('')
   const [searchResults, setSearchResults] = useState<SearchResult[]>([])
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -60,6 +61,13 @@ export default function ChatListScreen() {
     const conv = await window.dexterai.conversations.create()
     if (conv) {
       navigate(`/chat/${conv.id}`)
+    }
+  }
+
+  const handleUpdateTitle = async (id: string, newTitle: string) => {
+    const result = await window.dexterai.conversations.update(id, { title: newTitle })
+    if (result.success) {
+      loadConversations()
     }
   }
 
@@ -99,9 +107,14 @@ export default function ChatListScreen() {
                   onClick={() => navigate(`/chat/${r.conversation_id}`)}
                   className="w-full flex flex-col gap-0.5 px-3 py-2.5 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors text-left"
                 >
-                  <p className="text-xs font-medium text-primary truncate">
-                    {r.conversation_title || 'Untitled'}
-                  </p>
+                  <div className="text-xs font-medium text-primary mb-0.5">
+                    <EditableTitle
+                      value={r.conversation_title || 'Untitled'}
+                      onSave={(val) => handleUpdateTitle(r.conversation_id, val)}
+                      textClassName="truncate"
+                      clickToEdit={false}
+                    />
+                  </div>
                   <p className="text-sm text-text truncate">{r.content}</p>
                 </button>
               ))}
@@ -136,14 +149,24 @@ export default function ChatListScreen() {
                     >
                       <MessageSquare className="w-4 h-4 text-gray-400 shrink-0" />
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-text truncate">
-                          {conv.title || 'New Conversation'}
-                        </p>
-                        {conv.last_message_preview && (
+                        <div className="text-sm font-medium text-text mb-0.5">
+                          <EditableTitle
+                            value={conv.title || 'New Conversation'}
+                            onSave={(val) => handleUpdateTitle(conv.id, val)}
+                            textClassName="truncate"
+                            clickToEdit={false}
+                          />
+                        </div>
+                        {streamingSessions[conv.id]?.status === 'streaming' ? (
+                          <span className="flex items-center gap-1 text-[10px] text-primary animate-pulse mt-0.5">
+                            <Loader2 className="w-3 h-3 animate-spin" />
+                            Generating...
+                          </span>
+                        ) : conv.last_message_preview ? (
                           <p className="text-xs text-gray-400 truncate mt-0.5">
                             {conv.last_message_preview}
                           </p>
-                        )}
+                        ) : null}
                       </div>
                       {conv.message_count !== undefined && conv.message_count > 0 && (
                         <span className="text-[10px] text-gray-400 shrink-0">
