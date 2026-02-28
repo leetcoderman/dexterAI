@@ -156,7 +156,9 @@ export default function Connection() {
                                     ? 'sk-...'
                                     : providerId === 'nvidia_nim'
                                         ? 'nvapi-... (1 key, 160+ models)'
-                                        : 'Enter your API key'
+                                        : providerId === 'github'
+                                            ? 'ghp_... or github_pat_...'
+                                            : 'Enter your API key'
                             }
                             className="w-full px-3 py-2 border border-border rounded-md bg-background focus:ring-2 focus:ring-primary focus:outline-none transition-shadow"
                         />

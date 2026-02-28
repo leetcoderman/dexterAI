@@ -2,45 +2,50 @@ import OpenAI from 'openai';
 import { BaseProviderAdapter, IPCEmitter, ToolCallResult } from './base.adapter';
 import { VerifyResult, ProviderCredentials, TestRequest, ToolDefinition } from '@dexterai/registry-types';
 
-export class NvidiaAdapter extends BaseProviderAdapter {
-    readonly providerId = 'nvidia_nim';
+export class GithubAdapter extends BaseProviderAdapter {
+    readonly providerId = 'github';
 
     private getClient(apiKey: string): OpenAI {
         return new OpenAI({
             apiKey,
-            baseURL: 'https://integrate.api.nvidia.com/v1',
-        });
-    }
-
-    // Helper to fix NVIDIA's strict Pydantic validation on empty strings
-    private sanitizeMessages(messages: any[]) {
-        return messages.map((m) => {
-            const msg = { ...m };
-            if (typeof msg.content === 'string' && msg.content === '') {
-                // OpenAI spec allows null content for assistant messages with tool calls
-                if (msg.role === 'assistant' && msg.tool_calls && msg.tool_calls.length > 0) {
-                    msg.content = null;
-                } else if (msg.role === 'assistant' || msg.role === 'system') {
-                    // Strict models like DeepSeek V3.1 Terminus prefer a single space over [Empty]
-                    msg.content = ' ';
-                } else {
-                    msg.content = '[Empty]';
-                }
+            baseURL: 'https://models.github.ai/inference',
+            defaultHeaders: {
+                'User-Agent': 'DexterAI/v3.02'
             }
-            return msg;
         });
     }
 
     async verify(creds: ProviderCredentials): Promise<VerifyResult> {
         try {
             const client = this.getClient(creds.apiKey);
+
+            // GitHub Models API is compatible with OpenAI's models.list()
             const response = await client.models.list();
             const accessibleModels: string[] = [];
+
             for await (const model of response) {
-                accessibleModels.push(model.id);
+                const fullId = model.id;
+                // GitHub often returns IDs like "openai/gpt-4o" or "azure/llama-3".
+                // We strip the prefix to match our registry IDs.
+                const parts = fullId.split('/');
+                const shortId = parts[parts.length - 1];
+
+                accessibleModels.push(shortId.toLowerCase());
+                // Also push the full ID just in case the registry uses it
+                accessibleModels.push(fullId.toLowerCase());
             }
-            return { success: true, accessibleModels };
+
+            // If we successfully got a list (even empty), it's a success
+            return { success: true, accessibleModels: Array.from(new Set(accessibleModels)) };
         } catch (err: any) {
+            // If the error is not a 401/403, the key might still be valid for specific models
+            // even if listing fails (common in restricted environments).
+            const status = err.status || err.response?.status;
+            if (status && status !== 401 && status !== 403) {
+                console.warn('GitHub models.list() failed with non-auth error, assuming success:', err.message);
+                return { success: true, accessibleModels: [] };
+            }
+
             return {
                 success: false,
                 error: this.mapError(err)
@@ -58,12 +63,11 @@ export class NvidiaAdapter extends BaseProviderAdapter {
         if (!rawMessages || rawMessages.length === 0) {
             rawMessages = [{ role: 'user', content: params.prompt || '[Empty]' }];
         }
-        const sanitizedMessages = this.sanitizeMessages(rawMessages);
 
         const stream = await this.withRetry(() =>
             client.chat.completions.create({
-                model: req.modelId, // This will be "org/model-name"
-                messages: sanitizedMessages,
+                model: req.modelId,
+                messages: rawMessages,
                 max_tokens: params.maxTokens || 4096,
                 temperature: params.temperature,
                 stream: true,
@@ -82,12 +86,11 @@ export class NvidiaAdapter extends BaseProviderAdapter {
 
                 const content = chunk.choices[0]?.delta?.content || '';
                 const reasoning = (chunk.choices[0]?.delta as any)?.reasoning_content || '';
-
                 if (content || reasoning) {
                     emitter.emit('test:chunk', {
                         requestId: req.requestId,
                         text: content,
-                        thought: reasoning
+                        thought: reasoning || undefined
                     });
                 }
 
@@ -95,7 +98,6 @@ export class NvidiaAdapter extends BaseProviderAdapter {
                     finishReason = chunk.choices[0].finish_reason;
                 }
 
-                // Parse usage if provided
                 if ((chunk as any).usage) {
                     promptTokens = (chunk as any).usage.prompt_tokens;
                     completionTokens = (chunk as any).usage.completion_tokens;
@@ -109,20 +111,9 @@ export class NvidiaAdapter extends BaseProviderAdapter {
                 promptTokens: promptTokens,
                 completionTokens: completionTokens,
                 finishReason: finishReason,
-                cacheReadTokens: 0,
                 resolvedModel
             });
         } catch (err: any) {
-            if (err.status === 503) {
-                emitter.emit('test:error', {
-                    requestId: req.requestId,
-                    code: 'NVIDIA_SERVICE_UNAVAILABLE',
-                    message: 'NVIDIA NIM is currently overloaded or unavailable. Please check status.nvidia.com',
-                    actionLabel: 'Check Status',
-                    actionTarget: 'https://status.nvidia.com'
-                });
-                return;
-            }
             emitter.emit('test:error', {
                 requestId: req.requestId,
                 ...this.mapError(err)
@@ -152,71 +143,46 @@ export class NvidiaAdapter extends BaseProviderAdapter {
         if (!rawMessages || rawMessages.length === 0) {
             rawMessages = [{ role: 'user', content: params.prompt || '[Empty]' }];
         }
-        const sanitizedMessages = this.sanitizeMessages(rawMessages);
 
-        let response: any;
-        let usedTools = true;
-        try {
-            response = await this.withRetry(() =>
-                client.chat.completions.create({
-                    model: req.modelId,
-                    messages: sanitizedMessages,
-                    tools: formattedTools,
-                    tool_choice: 'auto',
-                    max_tokens: params.maxTokens || 4096,
-                    temperature: params.temperature ?? 0.6,
-                })
-            );
-        } catch (err: any) {
-            // Model doesn't support tools — retry without them
-            const msg = (err.message || '').toLowerCase();
-            if (err.status === 400 || err.status === 422 || msg.includes('tool') || msg.includes('function')) {
-                console.warn(`[NVIDIA] Model ${req.modelId} does not support tools, falling back to plain chat`);
-                usedTools = false;
-                response = await this.withRetry(() =>
-                    client.chat.completions.create({
-                        model: req.modelId,
-                        messages: sanitizedMessages,
-                        max_tokens: params.maxTokens || 4096,
-                        temperature: params.temperature ?? 0.6,
-                    })
-                );
-            } else {
-                throw err;
-            }
-        }
+        const response = await this.withRetry(() =>
+            client.chat.completions.create({
+                model: req.modelId,
+                messages: rawMessages,
+                tools: formattedTools,
+                tool_choice: 'auto',
+                max_tokens: params.maxTokens || 4096,
+                temperature: params.temperature ?? 0.6,
+            })
+        );
 
         const choice = response.choices[0];
         const message = choice.message;
 
         const text = message.content || '';
-        const thought = (message as any).reasoning_content || '';
-
-        if (text || thought) {
+        if (text) {
             emitter.emit('test:chunk', {
                 requestId: req.requestId,
-                text: text,
-                thought: thought
+                text: text
             });
         }
 
-        const toolCalls = usedTools ? (message.tool_calls || []).map((tc: any) => {
+        const toolCalls = (message.tool_calls || []).map((tc: any) => {
             let parsedArgs = {};
             try {
                 parsedArgs = tc.function?.arguments ? JSON.parse(tc.function.arguments) : {};
             } catch (e) {
-                console.error('Failed to parse tool arguments from NVIDIA:', e);
+                console.error('Failed to parse tool arguments from GitHub:', e);
             }
             return {
                 id: tc.id || `call_${Date.now()}`,
                 name: tc.function?.name || 'unknown_tool',
                 arguments: parsedArgs
             };
-        }) : [];
+        });
 
         return {
             text,
-            thought,
+            thought: (message as any).reasoning_content || '',
             toolCalls,
             finishReason: choice.finish_reason || 'stop',
             promptTokens: response.usage?.prompt_tokens || 0,

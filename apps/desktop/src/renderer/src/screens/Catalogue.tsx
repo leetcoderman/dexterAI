@@ -10,6 +10,7 @@ const PROVIDER_CONFIG = [
   { id: 'anthropic', label: 'Anthropic', icon: Sparkles },
   { id: 'google', label: 'Google Gemini', icon: Sparkles },
   { id: 'nvidia_nim', label: 'NVIDIA NIM', icon: Sparkles },
+  { id: 'github', label: 'GitHub Models', icon: Sparkles },
   { id: 'deepgram', label: 'Deepgram', icon: Sparkles }
 ]
 
@@ -18,6 +19,7 @@ const PROVIDER_COLORS: Record<string, string> = {
   anthropic: 'bg-orange-500/10 text-orange-400 border-orange-500/20',
   google: 'bg-blue-500/10 text-blue-400 border-blue-500/20',
   nvidia_nim: 'bg-purple-500/10 text-purple-400 border-purple-500/20',
+  github: 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20',
   deepgram: 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20'
 }
 
@@ -160,12 +162,20 @@ export default function Catalogue() {
                   {/* Model Identity */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <div className="text-[15px] font-bold text-text truncate group-hover:text-primary transition-colors">
+                      <div className={cn(
+                        "text-[15px] font-bold text-text truncate group-hover:text-primary transition-colors",
+                        (model as any).isPremium && "line-through opacity-50"
+                      )}>
                         {model.name}
                       </div>
                       {model.category === 'code_generation' && (
                         <span className="text-[9px] font-black uppercase px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-500 border border-blue-500/20">
                           Code
+                        </span>
+                      )}
+                      {(model as any).isPremium && (
+                        <span className="text-[9px] font-black uppercase px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-500 border border-amber-500/20">
+                          Premium
                         </span>
                       )}
                     </div>
@@ -230,6 +240,6 @@ export default function Catalogue() {
           </div>
         )}
       </div>
-    </div>
+    </div >
   )
 }

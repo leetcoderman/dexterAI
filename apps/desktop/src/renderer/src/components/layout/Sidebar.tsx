@@ -155,6 +155,13 @@ export default function Sidebar() {
         </div>
 
         <SidebarLink to="/catalogue" icon={Library} label="Model Catalogue" collapsed={collapsed} />
+        <SidebarLink
+          to="/nvidia-fleet"
+          icon={Zap}
+          label="Nvidia Intelligence Fleet"
+          collapsed={collapsed}
+          className="text-white hover:bg-[#76b900]/20 hover:text-[#76b900]"
+        />
         <SidebarLink to="/memory" icon={Brain} label="Memory" collapsed={collapsed} />
         <SidebarLink to="/code" icon={Code2} label="Code" collapsed={collapsed} />
       </nav>

@@ -9,13 +9,15 @@ import anthropicLogo from '../assets/logos/anthropic.png'
 import deepgramLogo from '../assets/logos/deepgram.png'
 import googleLogo from '../assets/logos/google.webp'
 import nvidiaLogo from '../assets/logos/Nvidia_logo.svg.png'
+import githubLogo from '../assets/logos/github.png'
 
 const PROVIDER_DATA = [
   { id: 'openai', label: 'OpenAI', logo: openaiLogo, description: 'GPT-4o, GPT-4, GPT-3.5 Turbo' },
   { id: 'anthropic', label: 'Anthropic', logo: anthropicLogo, description: 'Claude 3.5 Sonnet, Opus, Haiku' },
   { id: 'google', label: 'Google Gemini', logo: googleLogo, description: 'Gemini 1.5 Pro, Flash' },
   { id: 'nvidia_nim', label: 'NVIDIA NIM', logo: nvidiaLogo, description: 'Llama 3, Mixtral, Gemma via NVIDIA' },
-  { id: 'deepgram', label: 'Deepgram', logo: deepgramLogo, description: 'Speech-to-Text & Text-to-Speech' }
+  { id: 'deepgram', label: 'Deepgram', logo: deepgramLogo, description: 'Speech-to-Text & Text-to-Speech' },
+  { id: 'github', label: 'GitHub Models', logo: githubLogo, description: 'GPT-4.1, GPT-5, o3, DeepSeek, Llama 4, Grok 3 via GitHub' }
 ]
 
 export default function ProvidersScreen() {
@@ -33,15 +35,15 @@ export default function ProvidersScreen() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
           {PROVIDER_DATA.map((provider) => {
             const isConnected = connectedProviders.includes(provider.id)
-            
+
             return (
               <button
                 key={provider.id}
                 onClick={() => navigate(`/provider/${provider.id}`)}
                 className={cn(
                   "group relative flex flex-col items-center text-center p-8 rounded-2xl transition-all duration-300 border-2",
-                  isConnected 
-                    ? "bg-surface border-primary/20 hover:border-primary/40 shadow-lg shadow-primary/5" 
+                  isConnected
+                    ? "bg-surface border-primary/20 hover:border-primary/40 shadow-lg shadow-primary/5"
                     : "bg-surface/50 border-border hover:border-border-strong hover:bg-surface shadow-sm"
                 )}
               >
@@ -62,9 +64,9 @@ export default function ProvidersScreen() {
 
                 {/* Logo Container */}
                 <div className="w-20 h-20 mb-6 rounded-2xl bg-white shadow-md flex items-center justify-center p-4 group-hover:scale-110 transition-transform duration-300">
-                  <img 
-                    src={provider.logo} 
-                    alt={provider.label} 
+                  <img
+                    src={provider.logo}
+                    alt={provider.label}
                     className="max-w-full max-h-full object-contain"
                   />
                 </div>

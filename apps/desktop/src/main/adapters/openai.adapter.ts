@@ -32,7 +32,7 @@ export class OpenAIAdapter extends BaseProviderAdapter {
             client.chat.completions.create({
                 model: req.modelId,
                 messages: params.messages || [{ role: 'user', content: params.prompt }],
-                max_tokens: params.maxTokens || 32768,
+                max_tokens: params.maxTokens || 4096,
                 temperature: params.temperature,
                 stream: true,
             })
@@ -103,7 +103,7 @@ export class OpenAIAdapter extends BaseProviderAdapter {
             client.chat.completions.create({
                 model: req.modelId,
                 messages: params.messages,
-                max_tokens: params.maxTokens || 32768,
+                max_tokens: params.maxTokens || 4096,
                 temperature: params.temperature,
                 tools: openaiTools,
                 stream: true

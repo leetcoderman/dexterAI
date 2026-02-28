@@ -13,12 +13,27 @@
             "sdk_wrapper": "openai",
             "verify_endpoint": "/models",
             "key_generation_url": "https://build.nvidia.com/settings/api-keys",
-            "docs_url": "https://docs.api.nvidia.com",
             "pricing_url": "https://build.nvidia.com/pricing",
             "status_url": "https://status.nvidia.com",
             "rate_limit_rpm": 40,
             "free_tier": true,
             "free_tier_note": "Free via NVIDIA Developer Program. 40 RPM. No credit expiry."
+        },
+        {
+            "provider_id": "github",
+            "display_name": "GitHub Models",
+            "auth": {
+                "type": "bearer",
+                "header_name": "Authorization",
+                "key_prefix": "ghp_"
+            },
+            "base_url": "https://models.github.ai/inference",
+            "sdk_wrapper": "openai",
+            "verify_endpoint": "/models",
+            "key_generation_url": "https://github.com/marketplace/models",
+            "docs_url": "https://docs.github.com/en/github-models/prototyping-with-ai-models",
+            "free_tier": true,
+            "free_tier_note": "Free rate-limited usage for prototyping."
         }
     ],
     "models": [
@@ -30,8 +45,8 @@
             "description": "High-intelligence flagship model for complex, multi-step tasks",
             "context_window": 128000,
             "pricing": {
-                "input_per_1m_tokens": 5.0,
-                "output_per_1m_tokens": 15.0
+                "input_per_1m_tokens": 5,
+                "output_per_1m_tokens": 15
             },
             "supported_features": [
                 "vision",
@@ -51,7 +66,8 @@
                 "reasoning": 9,
                 "coding": 9
             },
-            "description_long": "GPT-4o is OpenAI's flagship model, designed for high-intelligence tasks that require complex reasoning and multi-modal understanding. It excels in software engineering, complex data analysis, and creative problem solving."
+            "description_long": "GPT-4o is OpenAI's flagship model, designed for high-intelligence tasks that require complex reasoning and multi-modal understanding. It excels in software engineering, complex data analysis, and creative problem solving.",
+            "max_output_tokens": 16384
         },
         {
             "id": "gpt-4o-mini",
@@ -82,7 +98,8 @@
                 "reasoning": 7,
                 "coding": 7
             },
-            "description_long": "GPT-4o mini provides a perfect balance of intelligence and incredible speed. It is optimized for high-volume, lightweight tasks like customer support automation, basic data extraction, and rapid prototyping."
+            "description_long": "GPT-4o mini provides a perfect balance of intelligence and incredible speed. It is optimized for high-volume, lightweight tasks like customer support automation, basic data extraction, and rapid prototyping.",
+            "max_output_tokens": 16384
         },
         {
             "id": "claude-3-7-sonnet-20250219",
@@ -92,8 +109,8 @@
             "description": "Most intelligent model, hybrid reasoning capabilities",
             "context_window": 200000,
             "pricing": {
-                "input_per_1m_tokens": 3.0,
-                "output_per_1m_tokens": 15.0
+                "input_per_1m_tokens": 3,
+                "output_per_1m_tokens": 15
             },
             "supported_features": [
                 "vision",
@@ -113,7 +130,8 @@
                 "reasoning": 10,
                 "coding": 10
             },
-            "description_long": "Claude 3.7 Sonnet is the first hybrid reasoning model, capable of both instantaneous responses and extended, visible 'thinking' for complex graduate-level problems. It sets the industry standard for software engineering and nuanced instruction following."
+            "description_long": "Claude 3.7 Sonnet is the first hybrid reasoning model, capable of both instantaneous responses and extended, visible 'thinking' for complex graduate-level problems. It sets the industry standard for software engineering and nuanced instruction following.",
+            "max_output_tokens": 128000
         },
         {
             "id": "claude-3-5-haiku-20241022",
@@ -124,7 +142,7 @@
             "context_window": 200000,
             "pricing": {
                 "input_per_1m_tokens": 0.8,
-                "output_per_1m_tokens": 4.0
+                "output_per_1m_tokens": 4
             },
             "supported_features": [
                 "system_prompt",
@@ -141,7 +159,8 @@
                 "reasoning": 8,
                 "coding": 8
             },
-            "description_long": "Claude 3.5 Haiku is Anthropic's fastest model. It matches the intelligence of previous flagship models like Claude 3 Opus while operating at the speed and cost of a lineage model. Perfect for real-time applications."
+            "description_long": "Claude 3.5 Haiku is Anthropic's fastest model. It matches the intelligence of previous flagship models like Claude 3 Opus while operating at the speed and cost of a lineage model. Perfect for real-time applications.",
+            "max_output_tokens": 8192
         },
         {
             "id": "nova-2",
@@ -196,8 +215,8 @@
             "description": "Google's most capable model with advanced reasoning and thinking levels",
             "context_window": 1000000,
             "pricing": {
-                "input_per_1m_tokens": 2.0,
-                "output_per_1m_tokens": 12.0
+                "input_per_1m_tokens": 2,
+                "output_per_1m_tokens": 12
             },
             "supported_features": [
                 "vision",
@@ -217,7 +236,8 @@
                 "reasoning": 9,
                 "coding": 9
             },
-            "description_long": "Gemini 3.1 Pro is Google's most capable model for complex reasoning. With its massive 1M+ token context window, it can ingest entire codebases, hours of video, or thousands of documents in a single turn."
+            "description_long": "Gemini 3.1 Pro is Google's most capable model for complex reasoning. With its massive 1M+ token context window, it can ingest entire codebases, hours of video, or thousands of documents in a single turn.",
+            "max_output_tokens": 65536
         },
         {
             "id": "gemini-3-pro-preview",
@@ -227,8 +247,8 @@
             "description": "Best for complex tasks requiring broad world knowledge across modalities",
             "context_window": 1000000,
             "pricing": {
-                "input_per_1m_tokens": 2.0,
-                "output_per_1m_tokens": 12.0
+                "input_per_1m_tokens": 2,
+                "output_per_1m_tokens": 12
             },
             "supported_features": [
                 "vision",
@@ -246,7 +266,8 @@
                 "reasoning": 9,
                 "coding": 8
             },
-            "description_long": "Gemini 3 Pro brings advanced multimodal understanding and world knowledge. It is highly optimized for creative collaboration and solving deep logical puzzles across text and images."
+            "description_long": "Gemini 3 Pro brings advanced multimodal understanding and world knowledge. It is highly optimized for creative collaboration and solving deep logical puzzles across text and images.",
+            "max_output_tokens": 65536
         },
         {
             "id": "gemini-3-flash-preview",
@@ -256,8 +277,8 @@
             "description": "Pro-level intelligence at the speed and pricing of Flash",
             "context_window": 1000000,
             "pricing": {
-                "input_per_1m_tokens": 0.50,
-                "output_per_1m_tokens": 3.0
+                "input_per_1m_tokens": 0.5,
+                "output_per_1m_tokens": 3
             },
             "supported_features": [
                 "vision",
@@ -275,7 +296,8 @@
                 "reasoning": 8,
                 "coding": 8
             },
-            "description_long": "Gemini 3 Flash is built for scale. It offers reasoning capabilities that rival larger models while maintaining extremely low latency, making it the ideal choice for high-frequency multimodal applications."
+            "description_long": "Gemini 3 Flash is built for scale. It offers reasoning capabilities that rival larger models while maintaining extremely low latency, making it the ideal choice for high-frequency multimodal applications.",
+            "max_output_tokens": 65536
         },
         {
             "id": "gemini-3-pro-image-preview",
@@ -307,7 +329,12 @@
                 "reasoning": 10,
                 "coding": 9
             },
-            "description_long": "Llama 4 Maverick is an elite 400B+ parameter MoE model optimized by NVIDIA for maximum inference speed. It represents the pinnacle of open-weights multimodal performance."
+            "description_long": "Llama 4 Maverick is an elite 400B+ parameter MoE model optimized by NVIDIA for maximum inference speed. It represents the pinnacle of open-weights multimodal performance.",
+            "supported_features": [
+                "tools",
+                "system_prompt"
+            ],
+            "max_output_tokens": 32768
         },
         {
             "id": "meta/llama-4-scout-17b-16e-instruct",
@@ -327,7 +354,12 @@
                 "reasoning": 7,
                 "coding": 7
             },
-            "description_long": "Llama 4 Scout is a highly efficient 17B model designed for rapid response times and low-resource deployment while maintaining Llama 4's superior instruction-following DNA."
+            "description_long": "Llama 4 Scout is a highly efficient 17B model designed for rapid response times and low-resource deployment while maintaining Llama 4's superior instruction-following DNA.",
+            "supported_features": [
+                "tools",
+                "system_prompt"
+            ],
+            "max_output_tokens": 8192
         },
         {
             "id": "meta/llama-3.3-70b-instruct",
@@ -347,7 +379,12 @@
                 "reasoning": 9,
                 "coding": 8
             },
-            "description_long": "Llama 3.3 70B is a massive leap over previous 70B models, providing GPT-4 level intelligence in an open-weights package, heavily optimized for tool calling and RAG."
+            "description_long": "Llama 3.3 70B is a massive leap over previous 70B models, providing GPT-4 level intelligence in an open-weights package, heavily optimized for tool calling and RAG.",
+            "supported_features": [
+                "tools",
+                "system_prompt"
+            ],
+            "max_output_tokens": 32768
         },
         {
             "id": "nvidia/nemotron-3-nano-30b-a3b",
@@ -368,7 +405,12 @@
                 "reasoning": 8,
                 "coding": 8
             },
-            "description_long": "Nemotron-3 Nano 30B is a breakthrough open MoE model designed for sub-second agentic reasoning. It activates only 3.2B parameters per forward pass, achieving up to 3.3x higher throughput than comparable dense models."
+            "description_long": "Nemotron-3 Nano 30B is a breakthrough open MoE model designed for sub-second agentic reasoning. It activates only 3.2B parameters per forward pass, achieving up to 3.3x higher throughput than comparable dense models.",
+            "supported_features": [
+                "tools",
+                "system_prompt"
+            ],
+            "max_output_tokens": 32768
         },
         {
             "id": "qwen/qwen2.5-coder-32b-instruct",
@@ -376,7 +418,7 @@
             "category": "text_generation",
             "name": "Qwen 2.5 Coder 32B",
             "description": "NVIDIA NIM: SOTA open code model.",
-            "context_window": 131072,
+            "context_window": 32768,
             "knowledge_cutoff": "Early 2025",
             "capabilities": [
                 "SOTA Open Coding",
@@ -389,7 +431,12 @@
                 "reasoning": 9,
                 "coding": 10
             },
-            "description_long": "Qwen 2.5 Coder 32B is a state-of-the-art open coding model that rivals GPT-4o's programming performance. Optimized for instruction-following code repair and generation across 92 programming languages."
+            "description_long": "Qwen 2.5 Coder 32B is a state-of-the-art open coding model that rivals GPT-4o's programming performance. Optimized for instruction-following code repair and generation across 92 programming languages.",
+            "supported_features": [
+                "tools",
+                "system_prompt"
+            ],
+            "max_output_tokens": 16384
         },
         {
             "id": "qwen/qwen3.5-397b-a17b",
@@ -410,7 +457,12 @@
                 "reasoning": 9,
                 "coding": 8
             },
-            "description_long": "Qwen 3.5 VLM 397B is NVIDIA's flagship open multimodal model, supporting 201 languages and advanced video analysis. Its efficient architecture is up to 19x faster than previous generation dense models."
+            "description_long": "Qwen 3.5 VLM 397B is NVIDIA's flagship open multimodal model, supporting 201 languages and advanced video analysis. Its efficient architecture is up to 19x faster than previous generation dense models.",
+            "supported_features": [
+                "tools",
+                "system_prompt"
+            ],
+            "max_output_tokens": 32768
         },
         {
             "id": "nvidia/cosmos-reason2-8b",
@@ -431,7 +483,8 @@
                 "reasoning": 10,
                 "coding": 6
             },
-            "description_long": "Cosmos Reason2 8B is a specialized Vision-Language-Action (VLA) model designed for Physical AI. It excels in reasoning about physics, spatio-temporal dynamics, and generating direct motor commands for robotics."
+            "description_long": "Cosmos Reason2 8B is a specialized Vision-Language-Action (VLA) model designed for Physical AI. It excels in reasoning about physics, spatio-temporal dynamics, and generating direct motor commands for robotics.",
+            "max_output_tokens": 16384
         },
         {
             "id": "moonshotai/kimi-k2.5",
@@ -452,7 +505,12 @@
                 "reasoning": 10,
                 "coding": 9
             },
-            "description_long": "Kimi K2.5 is a trillion-parameter MoE model designed for Visual Agentic Intelligence. It can coordinate up to 100 specialized agents in parallel and generates code directly from visual UI wireframes and videos."
+            "description_long": "Kimi K2.5 is a trillion-parameter MoE model designed for Visual Agentic Intelligence. It can coordinate up to 100 specialized agents in parallel and generates code directly from visual UI wireframes and videos.",
+            "supported_features": [
+                "tools",
+                "system_prompt"
+            ],
+            "max_output_tokens": 32768
         },
         {
             "id": "minimax/minimax-m2.1",
@@ -473,7 +531,12 @@
                 "reasoning": 9,
                 "coding": 10
             },
-            "description_long": "Minimax M2.1 is an industry outlier with a massive 4-million token context window. It uses linear-complexity modeling to ingest entire libraries and codebases without the exponential cost of standard transformers."
+            "description_long": "Minimax M2.1 is an industry outlier with a massive 4-million token context window. It uses linear-complexity modeling to ingest entire libraries and codebases without the exponential cost of standard transformers.",
+            "supported_features": [
+                "tools",
+                "system_prompt"
+            ],
+            "max_output_tokens": 65536
         },
         {
             "id": "nvidia/parakeet-ctc-0.6b",
@@ -520,7 +583,12 @@
                 "reasoning": 10,
                 "coding": 9
             },
-            "description_long": "DeepSeek V3.1 is a massive 671B parameter hybrid reasoning model. It introduces optimized tool-calling and search agents, significantly reducing hallucinations while providing high reasoning performance."
+            "description_long": "DeepSeek V3.1 is a massive 671B parameter hybrid reasoning model. It introduces optimized tool-calling and search agents, significantly reducing hallucinations while providing high reasoning performance.",
+            "supported_features": [
+                "tools",
+                "system_prompt"
+            ],
+            "max_output_tokens": 32768
         },
         {
             "id": "deepseek-ai/deepseek-v3.1-terminus",
@@ -541,7 +609,12 @@
                 "reasoning": 10,
                 "coding": 10
             },
-            "description_long": "DeepSeek V3.1 Terminus is a refined version of the V3.1 model, specifically tuned for CLI stability and agentic terminal workflows. It fixes multilingual character anomalies and excels in complex code generation."
+            "description_long": "DeepSeek V3.1 Terminus is a refined version of the V3.1 model, specifically tuned for CLI stability and agentic terminal workflows. It fixes multilingual character anomalies and excels in complex code generation.",
+            "supported_features": [
+                "tools",
+                "system_prompt"
+            ],
+            "max_output_tokens": 32768
         },
         {
             "id": "deepseek-ai/deepseek-r1-distill-llama-8b",
@@ -562,7 +635,8 @@
                 "reasoning": 9,
                 "coding": 7
             },
-            "description_long": "DeepSeek R1 Distill Llama 8B leverages the reasoning CoT of the massive R1 models in a compact 8B package. Perfect for low-latency reasoning on edge hardware."
+            "description_long": "DeepSeek R1 Distill Llama 8B leverages the reasoning CoT of the massive R1 models in a compact 8B package. Perfect for low-latency reasoning on edge hardware.",
+            "max_output_tokens": 16384
         },
         {
             "id": "deepseek-ai/deepseek-r1-distill-qwen-32b",
@@ -583,7 +657,8 @@
                 "reasoning": 10,
                 "coding": 8
             },
-            "description_long": "DeepSeek R1 Distill Qwen 32B represents a superior balance of size and reasoning quality. It captures the deep multi-step logic of the 671B model while remaining highly efficient for general production use."
+            "description_long": "DeepSeek R1 Distill Qwen 32B represents a superior balance of size and reasoning quality. It captures the deep multi-step logic of the 671B model while remaining highly efficient for general production use.",
+            "max_output_tokens": 16384
         },
         {
             "id": "qwen/qwen3-coder-480b-a35b-instruct",
@@ -604,7 +679,12 @@
                 "reasoning": 10,
                 "coding": 10
             },
-            "description_long": "Qwen 3 Coder 480B is the top-tier coding variant of the Qwen 3 series. It provides unmatched reasoning depth for system architecture and complex logic repairs in over 100 programming languages."
+            "description_long": "Qwen 3 Coder 480B is the top-tier coding variant of the Qwen 3 series. It provides unmatched reasoning depth for system architecture and complex logic repairs in over 100 programming languages.",
+            "supported_features": [
+                "tools",
+                "system_prompt"
+            ],
+            "max_output_tokens": 32768
         },
         {
             "id": "meta/llama-3.1-405b-instruct",
@@ -625,7 +705,12 @@
                 "reasoning": 10,
                 "coding": 9
             },
-            "description_long": "Llama 3.1 405B is the first open-weights model to rival GPT-4o in general knowledge and reasoning depth. It remains a reliable baseline for complex instruction following and synthetic data generation."
+            "description_long": "Llama 3.1 405B is the first open-weights model to rival GPT-4o in general knowledge and reasoning depth. It remains a reliable baseline for complex instruction following and synthetic data generation.",
+            "supported_features": [
+                "tools",
+                "system_prompt"
+            ],
+            "max_output_tokens": 32768
         },
         {
             "id": "mistralai/mistral-large-3-675b-instruct-2512",
@@ -646,7 +731,12 @@
                 "reasoning": 10,
                 "coding": 9
             },
-            "description_long": "Mistral Large 3 (2512) is the latest MoE flagship from Mistral AI. With 675B total parameters and native vision, it offers an unprecedented 256K context window and elite multilingual performance."
+            "description_long": "Mistral Large 3 (2512) is the latest MoE flagship from Mistral AI. With 675B total parameters and native vision, it offers an unprecedented 256K context window and elite multilingual performance.",
+            "supported_features": [
+                "tools",
+                "system_prompt"
+            ],
+            "max_output_tokens": 32768
         },
         {
             "id": "zhipuai/glm-5-744b-moe",
@@ -667,7 +757,12 @@
                 "reasoning": 10,
                 "coding": 9
             },
-            "description_long": "GLM-5 744B is a massive MoE transformer optimized for long-horizon agentic tasks. It uses DeepSeek Sparse Attention (DSA) to maintain 200k+ context performance with significantly reduced memory pressure."
+            "description_long": "GLM-5 744B is a massive MoE transformer optimized for long-horizon agentic tasks. It uses DeepSeek Sparse Attention (DSA) to maintain 200k+ context performance with significantly reduced memory pressure.",
+            "supported_features": [
+                "tools",
+                "system_prompt"
+            ],
+            "max_output_tokens": 32768
         },
         {
             "id": "nvidia/nemotron-nano-12b-v2-vl",
@@ -688,7 +783,8 @@
                 "reasoning": 8,
                 "coding": 6
             },
-            "description_long": "Nemotron Nano 12B VL is NVIDIA's most efficient visual agent. With a 128k context window and specialized visual reasoning, it is perfect for rapid document parsing and analyzing long-duration video feeds."
+            "description_long": "Nemotron Nano 12B VL is NVIDIA's most efficient visual agent. With a 128k context window and specialized visual reasoning, it is perfect for rapid document parsing and analyzing long-duration video feeds.",
+            "max_output_tokens": 16384
         },
         {
             "id": "qwen/qwen3-next-80b-a3b-instruct",
@@ -709,7 +805,12 @@
                 "reasoning": 9,
                 "coding": 8
             },
-            "description_long": "Qwen3 Next 80B is part of the next-generation Qwen series, optimized for massive multilingual support and long-context reasoning with a highly efficient hybrid MoE architecture."
+            "description_long": "Qwen3 Next 80B is part of the next-generation Qwen series, optimized for massive multilingual support and long-context reasoning with a highly efficient hybrid MoE architecture.",
+            "supported_features": [
+                "tools",
+                "system_prompt"
+            ],
+            "max_output_tokens": 32768
         },
         {
             "id": "nvidia/llama-3.3-nemotron-super-49b-v1.5",
@@ -730,7 +831,12 @@
                 "reasoning": 10,
                 "coding": 8
             },
-            "description_long": "Nemotron Super 49B is a specialized version of Llama 3.3, further refined by NVIDIA with Reinforcement Learning (RL) to achieve superhuman instruction following and world-class reasoning quality."
+            "description_long": "Nemotron Super 49B is a specialized version of Llama 3.3, further refined by NVIDIA with Reinforcement Learning (RL) to achieve superhuman instruction following and world-class reasoning quality.",
+            "supported_features": [
+                "tools",
+                "system_prompt"
+            ],
+            "max_output_tokens": 32768
         },
         {
             "id": "gemini-1.5-pro",
@@ -741,12 +847,13 @@
             "context_window": 2000000,
             "pricing": {
                 "input_per_1m_tokens": 1.25,
-                "output_per_1m_tokens": 5.0
+                "output_per_1m_tokens": 5
             },
             "supported_features": [
                 "vision",
                 "system_prompt"
-            ]
+            ],
+            "max_output_tokens": 8192
         },
         {
             "id": "gemini-1.5-pro-latest",
@@ -757,12 +864,13 @@
             "context_window": 2000000,
             "pricing": {
                 "input_per_1m_tokens": 1.25,
-                "output_per_1m_tokens": 5.0
+                "output_per_1m_tokens": 5
             },
             "supported_features": [
                 "vision",
                 "system_prompt"
-            ]
+            ],
+            "max_output_tokens": 8192
         },
         {
             "id": "gemini-1.5-flash",
@@ -773,12 +881,13 @@
             "context_window": 1000000,
             "pricing": {
                 "input_per_1m_tokens": 0.075,
-                "output_per_1m_tokens": 0.30
+                "output_per_1m_tokens": 0.3
             },
             "supported_features": [
                 "vision",
                 "system_prompt"
-            ]
+            ],
+            "max_output_tokens": 32768
         },
         {
             "id": "gemini-1.5-flash-8b",
@@ -793,7 +902,8 @@
             },
             "supported_features": [
                 "system_prompt"
-            ]
+            ],
+            "max_output_tokens": 32768
         },
         {
             "id": "gemini-1.5-flash-latest",
@@ -804,11 +914,513 @@
             "context_window": 1000000,
             "pricing": {
                 "input_per_1m_tokens": 0.075,
-                "output_per_1m_tokens": 0.30
+                "output_per_1m_tokens": 0.3
             },
             "supported_features": [
                 "vision",
                 "system_prompt"
+            ],
+            "max_output_tokens": 32768
+        },
+        {
+            "id": "gpt-4.1",
+            "provider_id": "github",
+            "category": "text_generation",
+            "name": "GPT-4.1",
+            "description": "Major gains in coding, instruction following, and long-context.",
+            "context_window": 1048576,
+            "supported_features": [
+                "vision",
+                "tools",
+                "system_prompt"
+            ],
+            "max_output_tokens": 32768
+        },
+        {
+            "id": "gpt-4.1-mini",
+            "provider_id": "github",
+            "category": "text_generation",
+            "name": "GPT-4.1 Mini",
+            "description": "Fast and affordable, outperforms GPT-4o-mini across the board.",
+            "context_window": 1048576,
+            "supported_features": [
+                "vision",
+                "tools",
+                "system_prompt"
+            ],
+            "max_output_tokens": 32768
+        },
+        {
+            "id": "gpt-4.1-nano",
+            "provider_id": "github",
+            "category": "text_generation",
+            "name": "GPT-4.1 Nano",
+            "description": "Ultra-low latency with strong coding and instruction following.",
+            "context_window": 1048576,
+            "supported_features": [
+                "vision",
+                "tools",
+                "system_prompt"
+            ],
+            "max_output_tokens": 32768
+        },
+        {
+            "id": "gpt-4o",
+            "provider_id": "github",
+            "category": "text_generation",
+            "name": "GPT-4o",
+            "description": "OpenAI's advanced multimodal model with text, image, and audio input.",
+            "context_window": 131072,
+            "supported_features": [
+                "vision",
+                "tools",
+                "system_prompt"
+            ],
+            "max_output_tokens": 16384
+        },
+        {
+            "id": "gpt-4o-mini",
+            "provider_id": "github",
+            "category": "text_generation",
+            "name": "GPT-4o Mini",
+            "description": "Affordable and efficient for diverse text and image tasks.",
+            "context_window": 131072,
+            "supported_features": [
+                "vision",
+                "tools",
+                "system_prompt"
+            ],
+            "max_output_tokens": 16384
+        },
+        {
+            "id": "gpt-5",
+            "provider_id": "github",
+            "category": "text_generation",
+            "name": "GPT-5",
+            "description": "Designed for logic-heavy and multi-step tasks.",
+            "context_window": 200000,
+            "supported_features": [
+                "vision",
+                "tools",
+                "system_prompt"
+            ],
+            "max_output_tokens": 32768
+        },
+        {
+            "id": "gpt-5-mini",
+            "provider_id": "github",
+            "category": "text_generation",
+            "name": "GPT-5 Mini",
+            "description": "Lightweight GPT-5 variant for cost-sensitive applications.",
+            "context_window": 200000,
+            "supported_features": [
+                "vision",
+                "tools",
+                "system_prompt"
+            ],
+            "max_output_tokens": 32768
+        },
+        {
+            "id": "o3",
+            "provider_id": "github",
+            "category": "text_generation",
+            "name": "OpenAI o3",
+            "description": "Advanced reasoning with tool calling and streaming support.",
+            "context_window": 200000,
+            "supported_features": [
+                "vision",
+                "tools",
+                "system_prompt"
+            ],
+            "max_output_tokens": 100000
+        },
+        {
+            "id": "o3-mini",
+            "provider_id": "github",
+            "category": "text_generation",
+            "name": "OpenAI o3-mini",
+            "description": "Cost-efficient reasoning with high performance.",
+            "context_window": 200000,
+            "supported_features": [
+                "tools",
+                "system_prompt"
+            ],
+            "max_output_tokens": 65536
+        },
+        {
+            "id": "o4-mini",
+            "provider_id": "github",
+            "category": "text_generation",
+            "name": "OpenAI o4-mini",
+            "description": "Latest reasoning model with improved quality and safety.",
+            "context_window": 200000,
+            "supported_features": [
+                "vision",
+                "tools",
+                "system_prompt"
+            ],
+            "max_output_tokens": 65536
+        },
+        {
+            "id": "deepseek-r1",
+            "provider_id": "github",
+            "category": "text_generation",
+            "name": "DeepSeek R1",
+            "description": "Step-by-step reasoning for math, science, and coding tasks.",
+            "context_window": 128000,
+            "supported_features": [
+                "tools",
+                "system_prompt"
+            ],
+            "max_output_tokens": 16384
+        },
+        {
+            "id": "deepseek-r1-0528",
+            "provider_id": "github",
+            "category": "text_generation",
+            "name": "DeepSeek R1 0528",
+            "description": "Improved reasoning with reduced hallucinations and better tool calling.",
+            "context_window": 128000,
+            "supported_features": [
+                "tools",
+                "system_prompt"
+            ],
+            "max_output_tokens": 16384
+        },
+        {
+            "id": "deepseek-v3-0324",
+            "provider_id": "github",
+            "category": "text_generation",
+            "name": "DeepSeek V3",
+            "description": "Enhanced reasoning, function calling, and code generation.",
+            "context_window": 128000,
+            "supported_features": [
+                "tools",
+                "system_prompt"
+            ],
+            "max_output_tokens": 16384
+        },
+        {
+            "id": "llama-4-maverick-17b-128e-instruct-fp8",
+            "provider_id": "github",
+            "category": "text_generation",
+            "name": "Llama 4 Maverick",
+            "description": "Precise image understanding and creative writing at lower cost.",
+            "context_window": 1000000,
+            "supported_features": [
+                "vision",
+                "tools",
+                "system_prompt"
+            ],
+            "max_output_tokens": 32768
+        },
+        {
+            "id": "llama-4-scout-17b-16e-instruct",
+            "provider_id": "github",
+            "category": "text_generation",
+            "name": "Llama 4 Scout",
+            "description": "Massive 10M context for multi-doc summarization and code reasoning.",
+            "context_window": 10000000,
+            "supported_features": [
+                "vision",
+                "tools",
+                "system_prompt"
+            ],
+            "max_output_tokens": 32768
+        },
+        {
+            "id": "llama-3.3-70b-instruct",
+            "provider_id": "github",
+            "category": "text_generation",
+            "name": "Llama 3.3 70B",
+            "description": "Enhanced reasoning comparable to Llama 3.1 405B.",
+            "context_window": 128000,
+            "supported_features": [
+                "system_prompt"
+            ],
+            "max_output_tokens": 32768
+        },
+        {
+            "id": "llama-3.2-90b-vision-instruct",
+            "provider_id": "github",
+            "category": "text_generation",
+            "name": "Llama 3.2 90B Vision",
+            "description": "Advanced image reasoning for visual understanding apps.",
+            "context_window": 128000,
+            "supported_features": [
+                "vision",
+                "system_prompt"
+            ],
+            "max_output_tokens": 4096
+        },
+        {
+            "id": "mistral-small-2503",
+            "provider_id": "github",
+            "category": "text_generation",
+            "name": "Mistral Small 3.1",
+            "description": "Multimodal with 128k context and strong tool calling.",
+            "context_window": 128000,
+            "supported_features": [
+                "vision",
+                "tools",
+                "system_prompt"
+            ],
+            "max_output_tokens": 32768
+        },
+        {
+            "id": "mistral-medium-2505",
+            "provider_id": "github",
+            "category": "text_generation",
+            "name": "Mistral Medium 3",
+            "description": "Advanced reasoning, knowledge, coding, and vision capabilities.",
+            "context_window": 128000,
+            "supported_features": [
+                "vision",
+                "tools",
+                "system_prompt"
+            ],
+            "max_output_tokens": 32768
+        },
+        {
+            "id": "codestral-2501",
+            "provider_id": "github",
+            "category": "code_generation",
+            "name": "Codestral",
+            "description": "Code generation across 80+ languages with 256k context.",
+            "context_window": 256000,
+            "supported_features": [
+                "system_prompt"
+            ],
+            "max_output_tokens": 32768
+        },
+        {
+            "id": "grok-3",
+            "provider_id": "github",
+            "category": "text_generation",
+            "name": "Grok 3",
+            "description": "xAI's flagship model for finance, healthcare, and law domains.",
+            "context_window": 131072,
+            "supported_features": [
+                "system_prompt"
+            ],
+            "max_output_tokens": 32768
+        },
+        {
+            "id": "grok-3-mini",
+            "provider_id": "github",
+            "category": "text_generation",
+            "name": "Grok 3 Mini",
+            "description": "Lightweight reasoning model for logic-based tasks.",
+            "context_window": 131072,
+            "supported_features": [
+                "system_prompt"
+            ],
+            "max_output_tokens": 32768
+        },
+        {
+            "id": "phi-4-reasoning",
+            "provider_id": "github",
+            "category": "text_generation",
+            "name": "Phi-4 Reasoning",
+            "description": "State-of-the-art open-weight reasoning model by Microsoft.",
+            "context_window": 32768,
+            "supported_features": [
+                "system_prompt"
+            ],
+            "max_output_tokens": 16384
+        },
+        {
+            "id": "mai-ds-r1",
+            "provider_id": "github",
+            "category": "text_generation",
+            "name": "MAI-DS-R1",
+            "description": "Microsoft-refined DeepSeek R1 with improved safety.",
+            "context_window": 128000,
+            "supported_features": [
+                "system_prompt"
+            ],
+            "max_output_tokens": 16384
+        },
+        {
+            "id": "ai21-jamba-1.5-large",
+            "provider_id": "github",
+            "category": "text_generation",
+            "name": "AI21 Jamba 1.5 Large",
+            "description": "398B params with 256k context, function calling, and grounded generation.",
+            "context_window": 262144,
+            "supported_features": [
+                "tools",
+                "system_prompt"
+            ],
+            "max_output_tokens": 16384
+        },
+        {
+            "id": "cohere-command-r-plus-08-2024",
+            "provider_id": "github",
+            "category": "text_generation",
+            "name": "Cohere Command R+",
+            "description": "RAG-optimized model for enterprise workloads with tool calling.",
+            "context_window": 131072,
+            "supported_features": [
+                "tools",
+                "system_prompt"
+            ],
+            "max_output_tokens": 4096
+        },
+        {
+            "id": "gpt-5-chat",
+            "name": "GPT-5 Chat",
+            "context_window": 200000,
+            "max_output_tokens": 32768,
+            "description": "Chat-optimized variant of GPT-5.",
+            "provider_id": "github",
+            "category": "text_generation",
+            "supported_features": [
+                "system_prompt",
+                "tools"
+            ]
+        },
+        {
+            "id": "gpt-5-nano",
+            "name": "GPT-5 Nano",
+            "context_window": 128000,
+            "max_output_tokens": 16384,
+            "description": "Ultra-fast, lightweight GPT-5 variant.",
+            "provider_id": "github",
+            "category": "text_generation",
+            "supported_features": [
+                "system_prompt",
+                "tools"
+            ]
+        },
+        {
+            "id": "o1",
+            "name": "OpenAI o1",
+            "context_window": 128000,
+            "max_output_tokens": 32768,
+            "description": "Advanced reasoning model for complex tasks.",
+            "provider_id": "github",
+            "category": "text_generation",
+            "supported_features": [
+                "system_prompt",
+                "tools"
+            ]
+        },
+        {
+            "id": "o1-preview",
+            "name": "OpenAI o1-preview",
+            "context_window": 128000,
+            "max_output_tokens": 32768,
+            "description": "Preview of OpenAI o1 reasoning model.",
+            "provider_id": "github",
+            "category": "text_generation",
+            "supported_features": [
+                "system_prompt",
+                "tools"
+            ]
+        },
+        {
+            "id": "o1-mini",
+            "name": "OpenAI o1-mini",
+            "context_window": 128000,
+            "max_output_tokens": 32768,
+            "description": "Efficient reasoning model.",
+            "provider_id": "github",
+            "category": "text_generation",
+            "supported_features": [
+                "system_prompt",
+                "tools"
+            ]
+        },
+        {
+            "id": "phi-4-multimodal-instruct",
+            "name": "Phi-4 Multimodal Instruct",
+            "context_window": 128000,
+            "max_output_tokens": 32768,
+            "description": "Microsoft Phi-4 with multimodal capabilities.",
+            "provider_id": "github",
+            "category": "text_generation",
+            "supported_features": [
+                "system_prompt",
+                "tools"
+            ]
+        },
+        {
+            "id": "phi-4-mini-instruct",
+            "name": "Phi-4 Mini Instruct",
+            "context_window": 128000,
+            "max_output_tokens": 32768,
+            "description": "Efficient Phi-4 variant.",
+            "provider_id": "github",
+            "category": "text_generation",
+            "supported_features": [
+                "system_prompt",
+                "tools"
+            ]
+        },
+        {
+            "id": "phi-3.5-mini-instruct",
+            "name": "Phi-3.5 Mini Instruct",
+            "context_window": 128000,
+            "max_output_tokens": 32768,
+            "description": "Microsoft Phi-3.5 mini instruct model.",
+            "provider_id": "github",
+            "category": "text_generation",
+            "supported_features": [
+                "system_prompt",
+                "tools"
+            ]
+        },
+        {
+            "id": "phi-3.5-vision-instruct",
+            "name": "Phi-3.5 Vision Instruct",
+            "context_window": 128000,
+            "max_output_tokens": 32768,
+            "description": "Microsoft Phi-3.5 vision instruct model.",
+            "provider_id": "github",
+            "category": "text_generation",
+            "supported_features": [
+                "system_prompt",
+                "tools"
+            ]
+        },
+        {
+            "id": "mistral-large-2",
+            "name": "Mistral Large 2",
+            "context_window": 128000,
+            "max_output_tokens": 32768,
+            "description": "Next-generation Mistral flagship model.",
+            "provider_id": "github",
+            "category": "text_generation",
+            "supported_features": [
+                "system_prompt",
+                "tools"
+            ]
+        },
+        {
+            "id": "mistral-7b-instruct-v0.3",
+            "name": "Mistral-7B-Instruct v0.3",
+            "context_window": 32768,
+            "max_output_tokens": 8192,
+            "description": "Updated Mistral 7B instruct model.",
+            "provider_id": "github",
+            "category": "text_generation",
+            "supported_features": [
+                "system_prompt",
+                "tools"
+            ]
+        },
+        {
+            "id": "llama-3",
+            "name": "Llama 3",
+            "context_window": 32768,
+            "max_output_tokens": 8192,
+            "description": "Meta Llama 3 flagship model.",
+            "provider_id": "github",
+            "category": "text_generation",
+            "supported_features": [
+                "system_prompt",
+                "tools"
             ]
         }
     ]

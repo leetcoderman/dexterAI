@@ -27,6 +27,7 @@ export interface RegistryModel {
     name: string;
     description: string;
     context_window?: number;
+    max_output_tokens?: number;
     pricing?: RegistryPricing;
     pricing_updated?: string;
     supported_features?: string[];

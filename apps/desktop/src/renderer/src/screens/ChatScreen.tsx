@@ -149,7 +149,7 @@ export default function ChatScreen() {
         messages: contextMessages,
         params: {
           temperature: s.temperature,
-          maxTokens: s.maxTokens
+          maxTokens: allModels.find(m => m.id === selectedModelId && m.provider_id === selectedProviderId)?.max_output_tokens || 4096
         }
       })
     } catch (e: any) {

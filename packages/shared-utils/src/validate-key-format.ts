@@ -3,6 +3,8 @@ export const KEY_PREFIX_MAP: [string, string][] = [
     ['nvapi-', 'nvidia_nim'],
     ['sk-ant-', 'anthropic'],
     ['sk-', 'openai'],
+    ['ghp_', 'github'],
+    ['github_pat_', 'github'],
 ]
 
 export function detectProviderFromKey(apiKey: string): string | null {

@@ -27,9 +27,9 @@ async function readFileToolFn(args: { path: string }, rootPath: string): Promise
     if (sample[i] === 0) return '[Binary file — cannot display]'
   }
   const content = buffer.toString('utf-8')
-  // Truncate very large files
-  if (content.length > 50000) {
-    return content.slice(0, 50000) + '\n\n[...truncated at 50000 characters]'
+  // Truncate very large files to save context budget
+  if (content.length > 15000) {
+    return content.slice(0, 15000) + '\n\n[...truncated at 15000 characters]'
   }
   return content
 }
@@ -62,7 +62,7 @@ async function listDirectoryToolFn(args: { path: string }, rootPath: string): Pr
 async function searchCodeToolFn(args: { pattern: string; filePattern?: string }, rootPath: string): Promise<string> {
   const results: string[] = []
   const regex = new RegExp(args.pattern, 'gi')
-  const maxResults = 50
+  const maxResults = 30
 
   async function searchDir(dirPath: string): Promise<void> {
     if (results.length >= maxResults) return
@@ -140,8 +140,8 @@ async function executeCommandToolFn(
         } else if (error && !stdout && !stderr) {
           output = `Error: ${error.message}`
         }
-        if (output.length > 20000) {
-          output = output.slice(0, 20000) + '\n\n[...truncated at 20000 characters]'
+        if (output.length > 10000) {
+          output = output.slice(0, 10000) + '\n\n[...truncated at 10000 characters]'
         }
         resolve(output || '(no output)')
       }

@@ -5,7 +5,9 @@
       "Bash(npx electron-rebuild:*)",
       "Bash(npx:*)",
       "Bash(pip3 install:*)",
-      "Bash(timeout 15 npm run:*)"
+      "Bash(timeout 15 npm run:*)",
+      "WebSearch",
+      "WebFetch(domain:docs.github.com)"
     ]
   }
 }

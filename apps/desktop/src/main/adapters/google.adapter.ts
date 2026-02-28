@@ -135,7 +135,7 @@ export class GoogleAdapter extends BaseProviderAdapter {
 
             const generationConfig: GenerationConfig = {
                 temperature: Number(params.temperature ?? 0.7),
-                maxOutputTokens: Number(params.maxTokens ?? 32768),
+                maxOutputTokens: Number(params.maxTokens ?? 4096),
                 topP: Number(params.topP ?? 1),
             };
 
@@ -239,7 +239,7 @@ export class GoogleAdapter extends BaseProviderAdapter {
 
         const generationConfig: GenerationConfig = {
             temperature: Number(params.temperature ?? 0.7),
-            maxOutputTokens: Number(params.maxTokens ?? 32768)
+            maxOutputTokens: Number(params.maxTokens ?? 4096)
         };
 
         const result = await this.withRetry(() =>

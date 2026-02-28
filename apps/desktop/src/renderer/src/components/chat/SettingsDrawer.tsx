@@ -14,7 +14,7 @@ interface SettingsDrawerProps {
 const DEFAULTS: ConversationSettings = {
   systemPrompt: 'You are a helpful AI assistant.',
   temperature: 0.7,
-  maxTokens: 8192
+  maxTokens: 4096
 }
 
 export default function SettingsDrawer({
@@ -25,37 +25,13 @@ export default function SettingsDrawer({
   onSave
 }: SettingsDrawerProps) {
   const [local, setLocal] = useState<ConversationSettings>({ ...DEFAULTS, ...settings })
-  const [maxTokensText, setMaxTokensText] = useState(String(settings.maxTokens ?? DEFAULTS.maxTokens))
   const [showTooltip, setShowTooltip] = useState(false)
   const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 })
 
   useEffect(() => {
     const merged = { ...DEFAULTS, ...settings }
     setLocal(merged)
-    setMaxTokensText(String(merged.maxTokens ?? DEFAULTS.maxTokens))
   }, [conversationId, open])
-
-  const handleMaxTokensChange = (value: string) => {
-    // Allow the user to type freely without resetting
-    setMaxTokensText(value)
-    const parsed = parseInt(value)
-    if (!isNaN(parsed) && parsed > 0) {
-      setLocal({ ...local, maxTokens: Math.min(parsed, 128000) })
-    }
-  }
-
-  const handleMaxTokensBlur = () => {
-    // On blur, normalize the value
-    const parsed = parseInt(maxTokensText)
-    if (isNaN(parsed) || parsed < 1) {
-      setMaxTokensText(String(DEFAULTS.maxTokens))
-      setLocal({ ...local, maxTokens: DEFAULTS.maxTokens })
-    } else {
-      const clamped = Math.min(Math.max(parsed, 1), 128000)
-      setMaxTokensText(String(clamped))
-      setLocal({ ...local, maxTokens: clamped })
-    }
-  }
 
   const handleSave = async () => {
     onSave(local)
@@ -144,23 +120,7 @@ export default function SettingsDrawer({
             </div>
           </div>
 
-          {/* Max Tokens */}
-          <div>
-            <label className="text-xs font-medium text-text-secondary block mb-1.5">
-              Max Output Tokens
-            </label>
-            <input
-              type="text"
-              inputMode="numeric"
-              value={maxTokensText}
-              onChange={(e) => handleMaxTokensChange(e.target.value)}
-              onBlur={handleMaxTokensBlur}
-              className="w-full text-sm border border-border rounded-lg px-3 py-2 bg-background text-text focus:outline-none focus:ring-1 focus:ring-primary"
-            />
-            <p className="text-[10px] text-gray-400 mt-1">
-              1 token ≈ ¾ of a word. Set 4096 for short replies, 8192 for code, up to 128000 for very long outputs. Higher values cost more.
-            </p>
-          </div>
+
 
           {/* Memory Toggle */}
           <div className="flex items-center justify-between">

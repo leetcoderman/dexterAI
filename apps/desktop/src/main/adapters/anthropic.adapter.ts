@@ -48,7 +48,7 @@ export class AnthropicAdapter extends BaseProviderAdapter {
         const stream = await this.withRetry(() =>
             client.messages.create({
                 model: req.modelId,
-                max_tokens: params.maxTokens || 32768,
+                max_tokens: params.maxTokens || 4096,
                 messages: filteredMessages,
                 system: systemPrompt || undefined,
                 temperature: params.temperature,
@@ -116,7 +116,7 @@ export class AnthropicAdapter extends BaseProviderAdapter {
         const stream = await this.withRetry(() =>
             client.messages.create({
                 model: req.modelId,
-                max_tokens: params.maxTokens || 32768,
+                max_tokens: params.maxTokens || 4096,
                 messages,
                 system: systemPrompt || undefined,
                 temperature: params.temperature,

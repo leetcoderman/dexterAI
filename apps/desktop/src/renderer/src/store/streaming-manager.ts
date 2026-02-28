@@ -33,6 +33,7 @@ export interface StreamingSession {
   errorMessage: string | null
   toolSteps: ToolStep[]
   pendingApproval: AgentApprovalRequest | null
+  isToolProcessing: boolean
 }
 
 // Internal maps — the source of truth for in-flight sessions
@@ -73,7 +74,8 @@ function syncToStore(session: StreamingSession) {
       isSlow
     }),
     toolSteps: session.toolSteps,
-    pendingApproval: session.pendingApproval
+    pendingApproval: session.pendingApproval,
+    isToolProcessing: session.isToolProcessing
   })
 }
 
@@ -172,7 +174,8 @@ export function startStreamSession(opts: {
     metrics: null,
     errorMessage: null,
     toolSteps: [],
-    pendingApproval: null
+    pendingApproval: null,
+    isToolProcessing: false
   }
 
   sessionsByRequestId.set(opts.requestId, session)
@@ -186,7 +189,8 @@ export function startStreamSession(opts: {
     displayThought: '',
     displayMeta: '{}',
     toolSteps: [],
-    pendingApproval: null
+    pendingApproval: null,
+    isToolProcessing: false
   })
 }
 
@@ -224,6 +228,28 @@ export function getActiveSession(conversationId: string): StreamingSession | nul
   return sessionsByRequestId.get(reqId) || null
 }
 
+export function approveToolAction(conversationId: string) {
+  const reqId = requestIdByConversation.get(conversationId)
+  if (!reqId) return
+  const session = sessionsByRequestId.get(reqId)
+  if (!session) return
+
+  session.pendingApproval = null
+  session.isToolProcessing = true
+  syncToStore(session)
+}
+
+export function rejectToolAction(conversationId: string) {
+  const reqId = requestIdByConversation.get(conversationId)
+  if (!reqId) return
+  const session = sessionsByRequestId.get(reqId)
+  if (!session) return
+
+  session.pendingApproval = null
+  session.isToolProcessing = true
+  syncToStore(session)
+}
+
 export function cancelSession(conversationId: string) {
   const reqId = requestIdByConversation.get(conversationId)
   if (!reqId) return
@@ -254,6 +280,9 @@ export function initStreamingManager(): () => void {
   const unsubChunk = window.dexterai.on('chat:chunk', (data: StreamChunk) => {
     const session = getSession(data.requestId)
     if (!session) return
+
+    // Model is generating again — clear processing state
+    session.isToolProcessing = false
 
     if (!session.firstChunkTime) {
       session.firstChunkTime = Date.now()
@@ -324,8 +353,9 @@ export function initStreamingManager(): () => void {
     const session = getSession(data.requestId)
     if (!session) return
 
-    // Clear pending approval — tool executed (or was rejected)
+    // Clear pending approval and processing state — tool executed (or was rejected)
     session.pendingApproval = null
+    session.isToolProcessing = false
 
     session.toolSteps = [...session.toolSteps, {
       toolName: data.toolCall.name,

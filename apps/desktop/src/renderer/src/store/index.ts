@@ -12,6 +12,7 @@ export interface StreamSessionView {
   displayMeta: string
   toolSteps: ToolStep[]
   pendingApproval: AgentApprovalRequest | null
+  isToolProcessing?: boolean
 }
 
 interface FileTreeNode {

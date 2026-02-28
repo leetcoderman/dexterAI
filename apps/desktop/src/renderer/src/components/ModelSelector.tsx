@@ -17,7 +17,8 @@ const PROVIDER_LABELS: Record<string, string> = {
   openai: 'OpenAI',
   anthropic: 'Anthropic',
   google: 'Google',
-  nvidia_nim: 'NVIDIA NIM'
+  nvidia_nim: 'NVIDIA NIM',
+  github: 'GitHub Models'
 }
 
 export default function ModelSelector({
@@ -75,8 +76,8 @@ export default function ModelSelector({
     (m) => m.id === selectedModelId && m.provider_id === selectedProviderId
   )
 
-  // Build a Set for O(1) lookup of accessible model IDs
-  const accessibleModelSet = new Set(connectedModels)
+  // Build a Set for O(1) lookup of accessible model IDs (lowercase for case-insensitive matching)
+  const accessibleModelSet = new Set(connectedModels.map(id => id.toLowerCase()))
 
   return (
     <div ref={ref} className="relative">
@@ -123,22 +124,27 @@ export default function ModelSelector({
                   {grouped[providerId].map((model) => {
                     const isSelected = model.id === selectedModelId && model.provider_id === selectedProviderId
                     const hasTools = model.supported_features?.includes('tools')
+                    const isModelInApiList = accessibleModelSet.has(model.id.toLowerCase())
 
-                    // Model is accessible only if:
-                    // 1. Provider is connected
-                    // 2. Model ID exists in the API-verified accessible models list
-                    // 3. In agent mode, model must support tools
-                    const isModelAccessible = isProviderConnected && accessibleModelSet.has(model.id)
-                    const isAccessible = isModelAccessible && (!agentMode || hasTools)
+                    // Accessibility logic:
+                    // - Agent mode: provider connected + model supports tools (API list not required)
+                    // - Normal mode: provider connected + model in API-verified list
+                    const isAccessible = !isProviderConnected
+                      ? false
+                      : agentMode
+                        ? hasTools
+                        : (accessibleModelSet.size === 0 || isModelInApiList)
 
                     // Determine the reason for being disabled (for tooltip)
                     const disabledReason = !isProviderConnected
                       ? 'Provider not connected'
-                      : !isModelAccessible
-                        ? 'Model not available with your API key'
-                        : agentMode && !hasTools
-                          ? 'No tool support'
-                          : ''
+                      : agentMode && !hasTools
+                        ? 'No tool support for agent mode'
+                        : (model as any).isPremium && !isModelInApiList
+                          ? 'Requires GitHub Enterprise Tier'
+                          : !isModelInApiList && accessibleModelSet.size > 0
+                            ? 'Model not available with your API key'
+                            : ''
 
                     return (
                       <button
@@ -162,7 +168,7 @@ export default function ModelSelector({
                           <Check className="w-3 h-3 shrink-0 text-primary" />
                         ) : !isProviderConnected ? (
                           <Lock className="w-3 h-3 shrink-0 opacity-30" />
-                        ) : !isModelAccessible ? (
+                        ) : !isAccessible ? (
                           <CircleSlash className="w-3 h-3 shrink-0 opacity-30" />
                         ) : (
                           <div className="w-3" />

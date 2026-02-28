@@ -15,6 +15,7 @@ import ProvidersScreen from './screens/ProvidersScreen';
 import CodeWorkspaceScreen from './screens/CodeWorkspaceScreen';
 import Onboarding from './screens/Onboarding';
 import ModelDetailScreen from './screens/ModelDetailScreen';
+import NvidiaFleetScreen from './screens/NvidiaFleetScreen';
 
 function App(): React.JSX.Element {
   const isOnboarded = useAppStore((state) => state.isOnboarded);
@@ -112,9 +113,9 @@ function App(): React.JSX.Element {
           <Route path="chat" element={<ChatListScreen />} />
           <Route path="catalogue" element={<Catalogue />} />
           <Route path="catalogue/:modelId" element={<ModelDetailScreen />} />
+          <Route path="nvidia-fleet" element={<NvidiaFleetScreen />} />
           <Route path="provider/:providerId" element={<Connection />} />
           <Route path="test/*" element={<TestWorkspace />} />
-          <Route path="chat" element={<ChatListScreen />} />
           <Route path="chat/:conversationId" element={<ChatScreen />} />
           <Route path="memory" element={<MemoryScreen />} />
           <Route path="code" element={<CodeWorkspaceScreen />} />

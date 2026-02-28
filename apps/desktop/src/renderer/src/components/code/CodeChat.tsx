@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from 'react'
-import { Wrench, FileCode, FolderSearch, Search, FileEdit, TerminalSquare } from 'lucide-react'
+import { Wrench, FileCode, FolderSearch, Search, FileEdit, TerminalSquare, Loader2 } from 'lucide-react'
 import { cn } from '@dexterai/shared-utils'
 import { useAppStore } from '../../store'
 import {
@@ -7,7 +7,9 @@ import {
   attachView,
   detachView,
   cancelSession,
-  getActiveSession
+  getActiveSession,
+  approveToolAction,
+  rejectToolAction
 } from '../../store/streaming-manager'
 import type { ToolStep } from '../../store/streaming-manager'
 import ChatInput from '../chat/ChatInput'
@@ -105,6 +107,7 @@ export default function CodeChat({ rootPath, activeFile, openFiles: openFilesPro
   const isStreaming = streamSession?.status === 'streaming'
   const toolSteps = streamSession?.toolSteps ?? []
   const pendingApproval = streamSession?.pendingApproval ?? null
+  const isToolProcessing = streamSession?.isToolProcessing ?? false
 
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const scrollContainerRef = useRef<HTMLDivElement>(null)
@@ -177,7 +180,7 @@ export default function CodeChat({ rootPath, activeFile, openFiles: openFilesPro
     if (isNearBottom) {
       endOfMessagesRef.current?.scrollIntoView({ behavior: 'auto' })
     }
-  }, [displayMessages, toolSteps])
+  }, [displayMessages, toolSteps, isToolProcessing, pendingApproval])
 
   const buildSystemPrompt = (): string => {
     let prompt = `You are an expert coding assistant with access to tools for reading, writing, searching, and listing files in the user's project at: ${rootPathRef.current}.
@@ -208,7 +211,7 @@ Use your tools to explore the codebase before answering questions. When the user
     // Inject active file content
     const file = activeFileRef.current
     if (file) {
-      const preview = file.content.slice(0, 4000)
+      const preview = file.content.slice(0, 2000)
       prompt += `\n\nThe user is currently viewing: ${file.path}\n\`\`\`${file.language}\n${preview}\n\`\`\``
     }
 
@@ -269,6 +272,7 @@ Use your tools to explore the codebase before answering questions. When the user
     ]
 
     // 5. Send to agent backend (multi-turn tool loop)
+    const selectedModel = allModels.find(m => m.id === selectedModelId && m.provider_id === selectedProviderId)
     try {
       await window.dexterai.agent.send({
         conversationId: convId,
@@ -276,7 +280,10 @@ Use your tools to explore the codebase before answering questions. When the user
         modelId: selectedModelId,
         providerId: selectedProviderId,
         messages: contextMessages,
-        params: {},
+        params: {
+          maxTokens: selectedModel?.max_output_tokens || 4096,
+          contextWindow: selectedModel?.context_window || 128000
+        },
         projectRoot: rootPath
       })
     } catch (e: any) {
@@ -299,13 +306,14 @@ Use your tools to explore the codebase before answering questions. When the user
   }
 
   const handleApprove = async () => {
-    if (!pendingApproval) return
+    if (!pendingApproval || !codeConversationId) return
+    approveToolAction(codeConversationId)
     await window.dexterai.agent.approve(pendingApproval.approvalId)
-    // Manager will clear pendingApproval when next tool-result arrives
   }
 
   const handleReject = async () => {
-    if (!pendingApproval) return
+    if (!pendingApproval || !codeConversationId) return
+    rejectToolAction(codeConversationId)
     await window.dexterai.agent.reject(pendingApproval.approvalId)
   }
 
@@ -349,6 +357,14 @@ Use your tools to explore the codebase before answering questions. When the user
             {toolSteps.map((step, i) => (
               <ToolResultCard key={i} step={step} />
             ))}
+          </div>
+        )}
+
+        {/* Processing indicator — after approve/reject, while tool executes or model generates */}
+        {isToolProcessing && !pendingApproval && (
+          <div className="flex items-center gap-2 ml-1 px-3 py-2 rounded-lg bg-elevated/30 border border-border-subtle/50 text-[12px] text-text-muted animate-fade-in-up">
+            <Loader2 className="w-3.5 h-3.5 animate-spin text-primary" />
+            <span className="font-medium">Agent is working...</span>
           </div>
         )}
 

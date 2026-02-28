@@ -24,12 +24,14 @@ import { AnthropicAdapter } from './adapters/anthropic.adapter';
 import { DeepgramAdapter } from './adapters/deepgram.adapter';
 import { GoogleAdapter } from './adapters/google.adapter';
 import { NvidiaAdapter } from './adapters/nvidia.adapter';
+import { GithubAdapter } from './adapters/github.adapter';
 // Register provider adapters
 AdapterRegistry.register(new OpenAIAdapter());
 AdapterRegistry.register(new AnthropicAdapter());
 AdapterRegistry.register(new DeepgramAdapter());
 AdapterRegistry.register(new GoogleAdapter());
 AdapterRegistry.register(new NvidiaAdapter());
+AdapterRegistry.register(new GithubAdapter());
 
 function createWindow(): void {
   // Create the browser window.
