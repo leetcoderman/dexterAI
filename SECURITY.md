@@ -5,8 +5,7 @@
 **Please do not report security vulnerabilities through public GitHub Issues.**
 
 To report a security issue privately:
-1. Use [GitHub's private security advisory](https://github.com/leetcoderman/dexterAI/security/advisories/new) — this is the preferred channel
-2. Or email the maintainer directly (see GitHub profile for contact)
+1. email the maintainer directly (see GitHub profile for contact)
 
 Please include:
 - Description of the vulnerability and its potential impact
