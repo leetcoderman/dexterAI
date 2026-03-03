@@ -1,4 +1,4 @@
-ependencies
+# Dependencies
 node_modules/
 .pnpm-store/
 npm-debug.log*
@@ -23,7 +23,12 @@ build/
 *.njsproj
 *.sln
 *.sw?
+
+# macOS / Windows junk
 .DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
 
 # Local Env
 .env
@@ -31,11 +36,11 @@ build/
 .env.development.local
 .env.test.local
 .env.production.local
+*.local.json
 
 # Databases
 *.sqlite
 *.db
-!packages/registry-types/src/index.ts
 
 # Logs
 logs/
@@ -44,4 +49,13 @@ logs/
 # Temp
 tmp/
 .temp/
-node_modules
+
+# TypeScript incremental build cache
+*.tsbuildinfo
+
+# Tool / agent metadata (never commit local session state)
+.claude/
+apps/desktop/.claude/
+
+# ESLint cache
+.eslintcache

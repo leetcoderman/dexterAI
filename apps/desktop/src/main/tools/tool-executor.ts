@@ -3,7 +3,15 @@ import { readdir, readFile, writeFile, mkdir } from 'fs/promises'
 import { exec as execCb } from 'child_process'
 import type { ToolCall, ToolResult } from '@dexterai/registry-types'
 
-const DEFAULT_IGNORE = ['node_modules', '.git', 'dist', 'build', '__pycache__', '.next', '.DS_Store']
+const DEFAULT_IGNORE = [
+  'node_modules',
+  '.git',
+  'dist',
+  'build',
+  '__pycache__',
+  '.next',
+  '.DS_Store'
+]
 
 function validatePath(filePath: string, rootPath: string): string {
   const resolved = resolve(rootPath, filePath)
@@ -34,7 +42,10 @@ async function readFileToolFn(args: { path: string }, rootPath: string): Promise
   return content
 }
 
-async function writeFileToolFn(args: { path: string; content: string }, rootPath: string): Promise<string> {
+async function writeFileToolFn(
+  args: { path: string; content: string },
+  rootPath: string
+): Promise<string> {
   const resolved = validatePath(args.path, rootPath)
   await mkdir(resolve(resolved, '..'), { recursive: true })
   await writeFile(resolved, args.content, 'utf-8')
@@ -59,7 +70,10 @@ async function listDirectoryToolFn(args: { path: string }, rootPath: string): Pr
   return lines.length > 0 ? lines.join('\n') : '(empty directory)'
 }
 
-async function searchCodeToolFn(args: { pattern: string; filePattern?: string }, rootPath: string): Promise<string> {
+async function searchCodeToolFn(
+  args: { pattern: string; filePattern?: string },
+  rootPath: string
+): Promise<string> {
   const results: string[] = []
   const regex = new RegExp(args.pattern, 'gi')
   const maxResults = 30
@@ -88,7 +102,10 @@ async function searchCodeToolFn(args: { pattern: string; filePattern?: string },
           const sample = buffer.subarray(0, 512)
           let isBinary = false
           for (let i = 0; i < sample.length; i++) {
-            if (sample[i] === 0) { isBinary = true; break }
+            if (sample[i] === 0) {
+              isBinary = true
+              break
+            }
           }
           if (isBinary) continue
 
@@ -117,10 +134,15 @@ async function searchCodeToolFn(args: { pattern: string; filePattern?: string },
 
 const COMMAND_TIMEOUT_MS = 30000
 
-async function executeCommandToolFn(
-  args: { command: string },
-  rootPath: string
-): Promise<string> {
+// SECURITY NOTE: This function executes arbitrary shell commands via child_process.exec.
+// It is an intentional capability of the Agentic Workspace feature.
+// Mitigations in place:
+//  - User must explicitly approve each command via the CommandApproval UI gate before it reaches here
+//  - CWD is locked to the user's selected rootPath (no traversal possible)
+//  - 30-second hard timeout with SIGKILL
+//  - 1 MB output buffer cap + 10 000-character display truncation
+//  - No elevated privileges; runs as the app's OS user
+async function executeCommandToolFn(args: { command: string }, rootPath: string): Promise<string> {
   return new Promise((resolve) => {
     execCb(
       args.command,
@@ -157,13 +179,19 @@ export async function executeTool(toolCall: ToolCall, rootPath: string): Promise
         result = await readFileToolFn(toolCall.arguments as { path: string }, rootPath)
         break
       case 'write_file':
-        result = await writeFileToolFn(toolCall.arguments as { path: string; content: string }, rootPath)
+        result = await writeFileToolFn(
+          toolCall.arguments as { path: string; content: string },
+          rootPath
+        )
         break
       case 'list_directory':
         result = await listDirectoryToolFn(toolCall.arguments as { path: string }, rootPath)
         break
       case 'search_code':
-        result = await searchCodeToolFn(toolCall.arguments as { pattern: string; filePattern?: string }, rootPath)
+        result = await searchCodeToolFn(
+          toolCall.arguments as { pattern: string; filePattern?: string },
+          rootPath
+        )
         break
       case 'execute_command':
         result = await executeCommandToolFn(toolCall.arguments as { command: string }, rootPath)
@@ -174,6 +202,11 @@ export async function executeTool(toolCall: ToolCall, rootPath: string): Promise
     }
     return { toolCallId: toolCall.id, name: toolCall.name, result }
   } catch (err: any) {
-    return { toolCallId: toolCall.id, name: toolCall.name, result: `Error: ${err.message}`, isError: true }
+    return {
+      toolCallId: toolCall.id,
+      name: toolCall.name,
+      result: `Error: ${err.message}`,
+      isError: true
+    }
   }
 }

@@ -2,36 +2,36 @@ import { app, shell, BrowserWindow, ipcMain, Menu } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
-import { initDatabase, closeDatabase } from './db/database';
+import { initDatabase, closeDatabase } from './db/database'
 
-import { registerProviderHandlers } from './ipc/provider.ipc';
-import { registerCredentialHandlers } from './ipc/credentials.ipc';
-import { registerHistoryHandlers } from './ipc/history.ipc';
-import { registerTemplateHandlers } from './ipc/templates.ipc';
-import { registerFileHandlers } from './ipc/files.ipc';
-import { registerRegistryHandlers } from './ipc/registry.ipc';
-import { registerConversationHandlers } from './ipc/conversations.ipc';
-import { registerMessageHandlers } from './ipc/messages.ipc';
-import { registerChatHandlers } from './ipc/chat.ipc';
-import { registerMemoryHandlers } from './ipc/memory.ipc';
-import { registerSettingsHandlers } from './ipc/settings.ipc';
-import { registerFilesystemHandlers } from './ipc/filesystem.ipc';
-import { registerAgentHandlers } from './ipc/agent.ipc';
-import { registerTerminalHandlers, disposeAllTerminals } from './ipc/terminal.ipc';
-import { AdapterRegistry } from './adapters/adapter-registry';
-import { OpenAIAdapter } from './adapters/openai.adapter';
-import { AnthropicAdapter } from './adapters/anthropic.adapter';
-import { DeepgramAdapter } from './adapters/deepgram.adapter';
-import { GoogleAdapter } from './adapters/google.adapter';
-import { NvidiaAdapter } from './adapters/nvidia.adapter';
-import { GithubAdapter } from './adapters/github.adapter';
+import { registerProviderHandlers } from './ipc/provider.ipc'
+import { registerCredentialHandlers } from './ipc/credentials.ipc'
+import { registerHistoryHandlers } from './ipc/history.ipc'
+import { registerTemplateHandlers } from './ipc/templates.ipc'
+import { registerFileHandlers } from './ipc/files.ipc'
+import { registerRegistryHandlers } from './ipc/registry.ipc'
+import { registerConversationHandlers } from './ipc/conversations.ipc'
+import { registerMessageHandlers } from './ipc/messages.ipc'
+import { registerChatHandlers } from './ipc/chat.ipc'
+import { registerMemoryHandlers } from './ipc/memory.ipc'
+import { registerSettingsHandlers } from './ipc/settings.ipc'
+import { registerFilesystemHandlers } from './ipc/filesystem.ipc'
+import { registerAgentHandlers } from './ipc/agent.ipc'
+import { registerTerminalHandlers, disposeAllTerminals } from './ipc/terminal.ipc'
+import { AdapterRegistry } from './adapters/adapter-registry'
+import { OpenAIAdapter } from './adapters/openai.adapter'
+import { AnthropicAdapter } from './adapters/anthropic.adapter'
+import { DeepgramAdapter } from './adapters/deepgram.adapter'
+import { GoogleAdapter } from './adapters/google.adapter'
+import { NvidiaAdapter } from './adapters/nvidia.adapter'
+import { GithubAdapter } from './adapters/github.adapter'
 // Register provider adapters
-AdapterRegistry.register(new OpenAIAdapter());
-AdapterRegistry.register(new AnthropicAdapter());
-AdapterRegistry.register(new DeepgramAdapter());
-AdapterRegistry.register(new GoogleAdapter());
-AdapterRegistry.register(new NvidiaAdapter());
-AdapterRegistry.register(new GithubAdapter());
+AdapterRegistry.register(new OpenAIAdapter())
+AdapterRegistry.register(new AnthropicAdapter())
+AdapterRegistry.register(new DeepgramAdapter())
+AdapterRegistry.register(new GoogleAdapter())
+AdapterRegistry.register(new NvidiaAdapter())
+AdapterRegistry.register(new GithubAdapter())
 
 function createWindow(): void {
   // Create the browser window.
@@ -43,6 +43,10 @@ function createWindow(): void {
     ...(process.platform === 'linux' ? { icon } : {}),
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
+      // sandbox: false is required to allow the preload script to load native Node modules
+      // (keytar for OS keychain, better-sqlite3, node-pty). contextIsolation remains enabled
+      // via contextBridge, ensuring the renderer has no direct Node access.
+      // Track: https://github.com/leetcoderman/dexterAI/issues — "Evaluate Electron sandbox re-enablement"
       sandbox: false
     }
   })
@@ -59,18 +63,22 @@ function createWindow(): void {
   // Build a custom application menu with zoom accelerators
   // This ensures Cmd+/- are not swallowed by Electron's default menu
   const menuTemplate: Electron.MenuItemConstructorOptions[] = [
-    ...(process.platform === 'darwin' ? [{
-      label: app.name,
-      submenu: [
-        { role: 'about' as const },
-        { type: 'separator' as const },
-        { role: 'hide' as const },
-        { role: 'hideOthers' as const },
-        { role: 'unhide' as const },
-        { type: 'separator' as const },
-        { role: 'quit' as const }
-      ]
-    }] : []),
+    ...(process.platform === 'darwin'
+      ? [
+          {
+            label: app.name,
+            submenu: [
+              { role: 'about' as const },
+              { type: 'separator' as const },
+              { role: 'hide' as const },
+              { role: 'hideOthers' as const },
+              { role: 'unhide' as const },
+              { type: 'separator' as const },
+              { role: 'quit' as const }
+            ]
+          }
+        ]
+      : []),
     {
       label: 'Edit',
       submenu: [
@@ -140,20 +148,20 @@ app.whenReady().then(() => {
   initDatabase()
 
   // Register Handlers
-  registerProviderHandlers();
-  registerCredentialHandlers();
-  registerHistoryHandlers();
-  registerTemplateHandlers();
-  registerFileHandlers();
-  registerRegistryHandlers();
-  registerConversationHandlers();
-  registerMessageHandlers();
-  registerChatHandlers();
-  registerMemoryHandlers();
-  registerSettingsHandlers();
-  registerFilesystemHandlers();
-  registerAgentHandlers();
-  registerTerminalHandlers();
+  registerProviderHandlers()
+  registerCredentialHandlers()
+  registerHistoryHandlers()
+  registerTemplateHandlers()
+  registerFileHandlers()
+  registerRegistryHandlers()
+  registerConversationHandlers()
+  registerMessageHandlers()
+  registerChatHandlers()
+  registerMemoryHandlers()
+  registerSettingsHandlers()
+  registerFilesystemHandlers()
+  registerAgentHandlers()
+  registerTerminalHandlers()
 
   // Window management
   ipcMain.handle('app:openWindow', () => {
