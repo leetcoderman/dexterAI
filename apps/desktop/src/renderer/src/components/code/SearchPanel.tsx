@@ -24,28 +24,31 @@ export default function SearchPanel({ rootPath, onResultClick, onClose }: Search
   const inputRef = useRef<HTMLInputElement>(null)
   const debounceRef = useRef<any>(null)
 
-  const doSearch = useCallback(async (q: string, fp: string) => {
-    if (!q.trim()) {
-      setResults([])
-      setHasSearched(false)
-      return
-    }
-    setIsSearching(true)
-    try {
-      const res = await window.dexterai.fs.search({
-        rootPath,
-        query: q,
-        filePattern: fp || undefined
-      })
-      setResults(res.results)
-      setTruncated(res.truncated)
-      setHasSearched(true)
-    } catch (e) {
-      console.error('Search failed:', e)
-    } finally {
-      setIsSearching(false)
-    }
-  }, [rootPath])
+  const doSearch = useCallback(
+    async (q: string, fp: string) => {
+      if (!q.trim()) {
+        setResults([])
+        setHasSearched(false)
+        return
+      }
+      setIsSearching(true)
+      try {
+        const res = await window.dexterai.fs.search({
+          rootPath,
+          query: q,
+          filePattern: fp || undefined
+        })
+        setResults(res.results)
+        setTruncated(res.truncated)
+        setHasSearched(true)
+      } catch (e) {
+        console.error('Search failed:', e)
+      } finally {
+        setIsSearching(false)
+      }
+    },
+    [rootPath]
+  )
 
   const handleQueryChange = (value: string) => {
     setQuery(value)
@@ -136,9 +139,7 @@ export default function SearchPanel({ rootPath, onResultClick, onClose }: Search
               <span className="text-[11px] font-mono font-bold text-text-secondary truncate">
                 {filePath}
               </span>
-              <span className="text-[10px] text-text-muted ml-auto shrink-0">
-                {matches.length}
-              </span>
+              <span className="text-[10px] text-text-muted ml-auto shrink-0">{matches.length}</span>
             </div>
             {matches.map((m, i) => (
               <button

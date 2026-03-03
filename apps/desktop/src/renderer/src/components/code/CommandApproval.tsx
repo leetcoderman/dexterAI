@@ -7,7 +7,12 @@ interface CommandApprovalProps {
   onReject: () => void
 }
 
-export default function CommandApproval({ command, cwd, onApprove, onReject }: CommandApprovalProps) {
+export default function CommandApproval({
+  command,
+  cwd,
+  onApprove,
+  onReject
+}: CommandApprovalProps) {
   return (
     <div className="border border-warning/30 rounded-xl overflow-hidden bg-surface my-2">
       {/* Header */}

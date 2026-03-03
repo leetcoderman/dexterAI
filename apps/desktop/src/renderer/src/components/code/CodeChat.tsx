@@ -1,5 +1,13 @@
 import { useState, useEffect, useRef, useMemo } from 'react'
-import { Wrench, FileCode, FolderSearch, Search, FileEdit, TerminalSquare, Loader2 } from 'lucide-react'
+import {
+  Wrench,
+  FileCode,
+  FolderSearch,
+  Search,
+  FileEdit,
+  TerminalSquare,
+  Loader2
+} from 'lucide-react'
 import { cn } from '@dexterai/shared-utils'
 import { useAppStore } from '../../store'
 import {
@@ -71,28 +79,37 @@ function ToolResultCard({ step }: { step: ToolStep }) {
         {step.isError && <span className="text-red-400 text-[10px] font-bold">ERROR</span>}
       </button>
       {expanded && (
-        <pre className={cn(
-          'px-3 py-2 border-t border-border-subtle/50 overflow-x-auto max-h-[200px] overflow-y-auto text-[11px] leading-relaxed font-mono whitespace-pre-wrap',
-          step.isError ? 'text-red-400' : 'text-text-secondary'
-        )}>
+        <pre
+          className={cn(
+            'px-3 py-2 border-t border-border-subtle/50 overflow-x-auto max-h-[200px] overflow-y-auto text-[11px] leading-relaxed font-mono whitespace-pre-wrap',
+            step.isError ? 'text-red-400' : 'text-text-secondary'
+          )}
+        >
           {step.result}
         </pre>
       )}
       {!expanded && (
         <div className="px-3 pb-2 text-[11px] text-text-muted font-mono truncate">
-          {preview}{step.result.length > 120 ? '...' : ''}
+          {preview}
+          {step.result.length > 120 ? '...' : ''}
         </div>
       )}
     </div>
   )
 }
 
-export default function CodeChat({ rootPath, activeFile, openFiles: openFilesProp, fileTree }: CodeChatProps) {
+export default function CodeChat({
+  rootPath,
+  activeFile,
+  openFiles: openFilesProp,
+  fileTree
+}: CodeChatProps) {
   const {
     allModels,
     loadAllModels,
     connectedProviders,
     connectedModels,
+    modelsByProvider,
     selectedModelId,
     selectedProviderId,
     setSelectedModel,
@@ -101,8 +118,8 @@ export default function CodeChat({ rootPath, activeFile, openFiles: openFilesPro
   } = useAppStore()
 
   // Read streaming session from global manager via Zustand
-  const streamSession = useAppStore(
-    (s) => codeConversationId ? s.streamingSessions[codeConversationId] : undefined
+  const streamSession = useAppStore((s) =>
+    codeConversationId ? s.streamingSessions[codeConversationId] : undefined
   )
   const isStreaming = streamSession?.status === 'streaming'
   const toolSteps = streamSession?.toolSteps ?? []
@@ -167,7 +184,13 @@ export default function CodeChat({ rootPath, activeFile, openFiles: openFilesPro
       }
       return m
     })
-  }, [messages, streamSession?.displayText, streamSession?.displayMeta, streamSession?.assistantMsgId, streamSession?.status])
+  }, [
+    messages,
+    streamSession?.displayText,
+    streamSession?.displayMeta,
+    streamSession?.assistantMsgId,
+    streamSession?.status
+  ])
 
   // Auto-scroll
   useEffect(() => {
@@ -201,10 +224,12 @@ Use your tools to explore the codebase before answering questions. When the user
     // Inject list of open files
     const allOpen = openFilesRef.current
     if (allOpen && allOpen.length > 0) {
-      const openList = allOpen.map((f) => {
-        const dirty = f.content !== f.originalContent ? ' (unsaved)' : ''
-        return `- ${f.path}${dirty}`
-      }).join('\n')
+      const openList = allOpen
+        .map((f) => {
+          const dirty = f.content !== f.originalContent ? ' (unsaved)' : ''
+          return `- ${f.path}${dirty}`
+        })
+        .join('\n')
       prompt += `\n\nCurrently open files:\n${openList}`
     }
 
@@ -272,7 +297,9 @@ Use your tools to explore the codebase before answering questions. When the user
     ]
 
     // 5. Send to agent backend (multi-turn tool loop)
-    const selectedModel = allModels.find(m => m.id === selectedModelId && m.provider_id === selectedProviderId)
+    const selectedModel = allModels.find(
+      (m) => m.id === selectedModelId && m.provider_id === selectedProviderId
+    )
     try {
       await window.dexterai.agent.send({
         conversationId: convId,
@@ -291,7 +318,7 @@ Use your tools to explore the codebase before answering questions. When the user
       window.dexterai.messages.update(assistantMsg.id, { content: errorText })
       cancelSession(convId)
       setMessages((prev) =>
-        prev.map((m) => m.id === assistantMsg.id ? { ...m, content: errorText } : m)
+        prev.map((m) => (m.id === assistantMsg.id ? { ...m, content: errorText } : m))
       )
     }
   }
@@ -328,10 +355,7 @@ Use your tools to explore the codebase before answering questions. When the user
       </div>
 
       {/* Messages */}
-      <div
-        ref={scrollContainerRef}
-        className="flex-1 overflow-y-auto p-4 space-y-4"
-      >
+      <div ref={scrollContainerRef} className="flex-1 overflow-y-auto p-4 space-y-4">
         {displayMessages.filter((m) => m.role !== 'system').length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-center text-text-muted space-y-2 py-8">
             <Wrench className="w-8 h-8 opacity-30" />
@@ -403,6 +427,7 @@ Use your tools to explore the codebase before answering questions. When the user
         selectedProviderId={selectedProviderId}
         connectedProviders={connectedProviders}
         connectedModels={connectedModels}
+        modelsByProvider={modelsByProvider}
         onModelChange={setSelectedModel}
         agentMode={true}
       />

@@ -1,6 +1,10 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import type { ConversationSummary, RegistryModel, AgentApprovalRequest } from '@dexterai/registry-types'
+import type {
+  ConversationSummary,
+  RegistryModel,
+  AgentApprovalRequest
+} from '@dexterai/registry-types'
 import type { ToolStep } from './streaming-manager'
 
 export interface StreamSessionView {
@@ -34,6 +38,7 @@ interface AppState {
   isOnboarded: boolean
   connectedProviders: string[]
   connectedModels: string[]
+  modelsByProvider: Record<string, string[]>
   setOnboarded: (status: boolean) => void
   setConnectedProviders: (providers: string[]) => void
   setConnectedModels: (models: string[]) => void
@@ -52,13 +57,28 @@ interface AppState {
   loadAllModels: () => Promise<void>
   selectedModelId: string | null
   selectedProviderId: string | null
-  setSelectedModel: (modelId: string, providerId: string) => void
+  setSelectedModel: (modelId: string | null, providerId: string | null) => void
 
   // UI state
   sidebarCollapsed: boolean
   toggleSidebar: () => void
   zoomLevel: number
   setZoomLevel: (level: number) => void
+  sidebarWidth: number
+  setSidebarWidth: (width: number) => void
+
+  // AI Defaults
+  defaultSystemPrompt: string
+  setDefaultSystemPrompt: (prompt: string) => void
+  defaultTemperature: number
+  setDefaultTemperature: (temp: number) => void
+  preferredModelId: string | null
+  preferredProviderId: string | null
+  setPreferredModel: (modelId: string | null, providerId: string | null) => void
+
+  // Experimental Features
+  showExperimentalFeatures: boolean
+  setShowExperimentalFeatures: (show: boolean) => void
 
   // Project filesystem
   projectRoot: string | null
@@ -95,6 +115,7 @@ export const useAppStore = create<AppState>()(
       isOnboarded: false,
       connectedProviders: [],
       connectedModels: [],
+      modelsByProvider: {},
       setOnboarded: (status) => set({ isOnboarded: status }),
       setConnectedProviders: (providers) => set({ connectedProviders: providers }),
       setConnectedModels: (models) => set({ connectedModels: models }),
@@ -111,7 +132,11 @@ export const useAppStore = create<AppState>()(
       syncConnectedProviders: async () => {
         try {
           const result = await window.dexterai.credentials.listConnected()
-          set({ connectedProviders: result.providers, connectedModels: result.models })
+          set({
+            connectedProviders: result.providers,
+            connectedModels: result.models,
+            modelsByProvider: result.modelsByProvider || {}
+          })
         } catch (e) {
           console.error('Failed to sync connected providers from DB:', e)
         }
@@ -150,6 +175,20 @@ export const useAppStore = create<AppState>()(
 
       zoomLevel: 100,
       setZoomLevel: (level) => set({ zoomLevel: level }),
+      sidebarWidth: 20, // percentage
+      setSidebarWidth: (width) => set({ sidebarWidth: width }),
+
+      defaultSystemPrompt: 'You are a helpful AI assistant.',
+      setDefaultSystemPrompt: (prompt) => set({ defaultSystemPrompt: prompt }),
+      defaultTemperature: 0.7,
+      setDefaultTemperature: (temp) => set({ defaultTemperature: temp }),
+      preferredModelId: null,
+      preferredProviderId: null,
+      setPreferredModel: (modelId, providerId) =>
+        set({ preferredModelId: modelId, preferredProviderId: providerId }),
+
+      showExperimentalFeatures: false,
+      setShowExperimentalFeatures: (show) => set({ showExperimentalFeatures: show }),
 
       projectRoot: null,
       setProjectRoot: (root) => set({ projectRoot: root }),
@@ -230,12 +269,19 @@ export const useAppStore = create<AppState>()(
         isOnboarded: state.isOnboarded,
         connectedProviders: state.connectedProviders,
         connectedModels: state.connectedModels,
+        modelsByProvider: state.modelsByProvider,
         selectedModelId: state.selectedModelId,
         selectedProviderId: state.selectedProviderId,
         sidebarCollapsed: state.sidebarCollapsed,
         zoomLevel: state.zoomLevel,
         projectRoot: state.projectRoot,
-        codeConversationId: state.codeConversationId
+        codeConversationId: state.codeConversationId,
+        defaultSystemPrompt: state.defaultSystemPrompt,
+        defaultTemperature: state.defaultTemperature,
+        preferredModelId: state.preferredModelId,
+        preferredProviderId: state.preferredProviderId,
+        showExperimentalFeatures: state.showExperimentalFeatures,
+        sidebarWidth: state.sidebarWidth
       })
     }
   )

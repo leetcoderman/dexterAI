@@ -1,8 +1,13 @@
 import { useState, useEffect, useRef } from 'react'
 import { Play, StopCircle, Volume2, Copy, Check, Download, Loader2 } from 'lucide-react'
 
-
-export default function TTSWorkspace({ providerId, modelId }: { providerId: string; modelId: string }) {
+export default function TTSWorkspace({
+  providerId,
+  modelId
+}: {
+  providerId: string
+  modelId: string
+}) {
   const [text, setText] = useState('')
   const [isGenerating, setIsGenerating] = useState(false)
   const requestIdRef = useRef<string | null>(null)
@@ -34,7 +39,10 @@ export default function TTSWorkspace({ providerId, modelId }: { providerId: stri
       }
     })
 
-    return () => { unsubDone(); unsubError() }
+    return () => {
+      unsubDone()
+      unsubError()
+    }
   }, [])
 
   const handleGenerate = async () => {
@@ -96,7 +104,9 @@ export default function TTSWorkspace({ providerId, modelId }: { providerId: stri
           {/* Text input */}
           <div className="flex-1 flex flex-col gap-1.5">
             <div className="flex items-center justify-between">
-              <label className="text-xs font-semibold text-text-muted uppercase tracking-wider">Input Text</label>
+              <label className="text-xs font-semibold text-text-muted uppercase tracking-wider">
+                Input Text
+              </label>
               <span className="text-[10px] text-text-muted">{text.length} chars</span>
             </div>
             <textarea
@@ -123,7 +133,10 @@ export default function TTSWorkspace({ providerId, modelId }: { providerId: stri
         <div className="p-4 border-t border-border-subtle shrink-0">
           {errorMsg && <p className="text-xs text-danger mb-3">{errorMsg}</p>}
           {isGenerating ? (
-            <button onClick={handleStop} className="btn-danger w-full flex items-center justify-center gap-2 text-sm">
+            <button
+              onClick={handleStop}
+              className="btn-danger w-full flex items-center justify-center gap-2 text-sm"
+            >
               <StopCircle className="w-4 h-4" /> Stop
             </button>
           ) : (
@@ -132,7 +145,11 @@ export default function TTSWorkspace({ providerId, modelId }: { providerId: stri
               disabled={!text.trim()}
               className="btn-primary w-full flex items-center justify-center gap-2 text-sm disabled:opacity-40"
             >
-              {isGenerating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4" />}
+              {isGenerating ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Play className="w-4 h-4" />
+              )}
               Generate Speech
             </button>
           )}
@@ -152,7 +169,9 @@ export default function TTSWorkspace({ providerId, modelId }: { providerId: stri
                   </div>
                   <div>
                     <p className="text-sm font-semibold text-text">Generated Audio</p>
-                    <p className="text-[10px] text-text-muted">{charCount} characters &middot; {formatSize(sizeBytes)}</p>
+                    <p className="text-[10px] text-text-muted">
+                      {charCount} characters &middot; {formatSize(sizeBytes)}
+                    </p>
                   </div>
                 </div>
 

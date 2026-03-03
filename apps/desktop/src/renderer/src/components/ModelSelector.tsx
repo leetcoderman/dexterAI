@@ -9,6 +9,7 @@ interface ModelSelectorProps {
   selectedProviderId: string | null
   connectedProviders: string[]
   connectedModels: string[]
+  modelsByProvider: Record<string, string[]>
   onSelect: (modelId: string, providerId: string) => void
   agentMode?: boolean
 }
@@ -26,7 +27,8 @@ export default function ModelSelector({
   selectedModelId,
   selectedProviderId,
   connectedProviders,
-  connectedModels,
+  connectedModels: _connectedModels,
+  modelsByProvider,
   onSelect,
   agentMode
 }: ModelSelectorProps) {
@@ -43,7 +45,10 @@ export default function ModelSelector({
   }, [])
 
   const chatModels = models.filter(
-    (m) => m.category === 'text_generation' || m.category === 'code_generation' || m.category === 'image_understanding'
+    (m) =>
+      m.category === 'text_generation' ||
+      m.category === 'code_generation' ||
+      m.category === 'image_understanding'
   )
 
   const uniqueModels = chatModels.reduce<RegistryModel[]>((acc, m) => {
@@ -53,10 +58,10 @@ export default function ModelSelector({
 
   const filtered = search
     ? uniqueModels.filter(
-      (m) =>
-        m.name.toLowerCase().includes(search.toLowerCase()) ||
-        m.id.toLowerCase().includes(search.toLowerCase())
-    )
+        (m) =>
+          m.name.toLowerCase().includes(search.toLowerCase()) ||
+          m.id.toLowerCase().includes(search.toLowerCase())
+      )
     : uniqueModels
 
   const grouped = filtered.reduce<Record<string, RegistryModel[]>>((acc, m) => {
@@ -76,24 +81,23 @@ export default function ModelSelector({
     (m) => m.id === selectedModelId && m.provider_id === selectedProviderId
   )
 
-  // Build a Set for O(1) lookup of accessible model IDs (lowercase for case-insensitive matching)
-  const accessibleModelSet = new Set(connectedModels.map(id => id.toLowerCase()))
-
   return (
     <div ref={ref} className="relative">
       <button
         onClick={() => setOpen(!open)}
         className={cn(
-          "flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[13px] font-medium transition-all max-w-[140px]",
+          'flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[13px] font-medium transition-all max-w-[140px]',
           open
-            ? "border-primary bg-primary/5 text-text"
-            : "border-border bg-background/50 text-text-muted hover:text-text hover:border-border-hover shadow-sm"
+            ? 'border-primary bg-primary/5 text-text'
+            : 'border-border bg-background/50 text-text-muted hover:text-text hover:border-border-hover shadow-sm'
         )}
       >
         <span className="truncate flex-1">
           {selectedModel ? selectedModel.name : 'Select model'}
         </span>
-        <ChevronDown className={cn('w-3 h-3 shrink-0 transition-transform opacity-70', open && 'rotate-180')} />
+        <ChevronDown
+          className={cn('w-3 h-3 shrink-0 transition-transform opacity-70', open && 'rotate-180')}
+        />
       </button>
 
       {open && (
@@ -119,32 +123,39 @@ export default function ModelSelector({
                 <div key={providerId} className="mb-1">
                   <div className="px-3 py-1 text-[9px] font-bold uppercase tracking-widest text-text-muted/60 flex items-center justify-between">
                     {PROVIDER_LABELS[providerId] || providerId}
-                    {isProviderConnected && <div className="w-1 h-1 rounded-full bg-green-500" title="Connected" />}
+                    {isProviderConnected && (
+                      <div className="w-1 h-1 rounded-full bg-green-500" title="Connected" />
+                    )}
                   </div>
                   {grouped[providerId].map((model) => {
-                    const isSelected = model.id === selectedModelId && model.provider_id === selectedProviderId
+                    const isSelected =
+                      model.id === selectedModelId && model.provider_id === selectedProviderId
                     const hasTools = model.supported_features?.includes('tools')
-                    const isModelInApiList = accessibleModelSet.has(model.id.toLowerCase())
+                    const providerModels = modelsByProvider[model.provider_id]
+                    // If the provider reported an empty accessible list, it means
+                    // "no restriction" — all registry models for that provider are ok.
+                    // If non-empty, only those specific models are accessible.
+                    const providerHasRestrictions = providerModels && providerModels.length > 0
+                    const isModelInProviderList = providerHasRestrictions
+                      ? providerModels.some((id) => id.toLowerCase() === model.id.toLowerCase())
+                      : true
 
                     // Accessibility logic:
-                    // - Agent mode: provider connected + model supports tools (API list not required)
-                    // - Normal mode: provider connected + model in API-verified list
+                    // - Agent mode: provider connected + model supports tools
+                    // - Normal mode: provider connected + model accessible per provider list
                     const isAccessible = !isProviderConnected
                       ? false
                       : agentMode
                         ? hasTools
-                        : (accessibleModelSet.size === 0 || isModelInApiList)
+                        : isModelInProviderList
 
-                    // Determine the reason for being disabled (for tooltip)
                     const disabledReason = !isProviderConnected
                       ? 'Provider not connected'
                       : agentMode && !hasTools
                         ? 'No tool support for agent mode'
-                        : (model as any).isPremium && !isModelInApiList
-                          ? 'Requires GitHub Enterprise Tier'
-                          : !isModelInApiList && accessibleModelSet.size > 0
-                            ? 'Model not available with your API key'
-                            : ''
+                        : !isModelInProviderList
+                          ? 'Model not available with your API key'
+                          : ''
 
                     return (
                       <button
@@ -173,15 +184,20 @@ export default function ModelSelector({
                         ) : (
                           <div className="w-3" />
                         )}
-                        <span className={cn("truncate flex-1", !isAccessible && "line-through decoration-text-muted/20")}>
+                        <span
+                          className={cn(
+                            'truncate flex-1',
+                            !isAccessible && 'line-through decoration-text-muted/20'
+                          )}
+                        >
                           {model.name}
                         </span>
                         {agentMode && hasTools && isAccessible && (
                           <span className="text-[8px] text-primary opacity-80">Agent</span>
                         )}
-                        {!agentMode && model.supported_features?.includes('vision') && isAccessible && (
-                          <span className="text-[8px] opacity-60">Vision</span>
-                        )}
+                        {!agentMode &&
+                          model.supported_features?.includes('vision') &&
+                          isAccessible && <span className="text-[8px] opacity-60">Vision</span>}
                       </button>
                     )
                   })}

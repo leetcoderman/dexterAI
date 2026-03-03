@@ -14,13 +14,7 @@ interface TestRunRow {
   error: string | null
 }
 
-export default function HistoryTab({
-  modelId,
-  category
-}: {
-  modelId: string
-  category?: string
-}) {
+export default function HistoryTab({ modelId, category }: { modelId: string; category?: string }) {
   const [runs, setRuns] = useState<TestRunRow[]>([])
   const [isLoading, setIsLoading] = useState(true)
 
@@ -119,10 +113,7 @@ export default function HistoryTab({
                 second: '2-digit'
               })
               return (
-                <tr
-                  key={run.id}
-                  className="hover:bg-elevated/50 transition-colors"
-                >
+                <tr key={run.id} className="hover:bg-elevated/50 transition-colors">
                   <td className="px-4 py-2.5 text-xs font-medium">{date}</td>
                   <td className="px-4 py-2.5">
                     {metrics?.ttft ? (

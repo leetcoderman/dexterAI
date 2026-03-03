@@ -1,5 +1,18 @@
 import { useState, useCallback } from 'react'
-import { Copy, Check, Pencil, RefreshCw, AlertTriangle, Brain, ChevronRight, Activity, Clock, Sparkles, Code, Zap } from 'lucide-react'
+import {
+  Copy,
+  Check,
+  Pencil,
+  RefreshCw,
+  AlertTriangle,
+  Brain,
+  ChevronRight,
+  Activity,
+  Clock,
+  Sparkles,
+  Code,
+  Zap
+} from 'lucide-react'
 import { cn } from '@dexterai/shared-utils'
 import Markdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
@@ -26,12 +39,21 @@ function CodeBlock({ language, children }: { language: string; children: string 
     <div className="relative group rounded-lg overflow-hidden my-3 border border-border">
       <div className="flex items-center justify-between px-3 py-1.5 bg-[#1e1e1e] text-gray-400 text-[10px] font-mono uppercase tracking-wider">
         <span>{language || 'code'}</span>
-        <button onClick={copy} className="flex items-center gap-1 text-[10px] hover:text-white transition-colors">
+        <button
+          onClick={copy}
+          className="flex items-center gap-1 text-[10px] hover:text-white transition-colors"
+        >
           {copied ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
           {copied ? 'Copied' : 'Copy'}
         </button>
       </div>
-      <SyntaxHighlighter language={language || 'text'} style={oneDark} customStyle={{ margin: 0, borderRadius: 0, fontSize: '13px' }} showLineNumbers={false} wrapLongLines>
+      <SyntaxHighlighter
+        language={language || 'text'}
+        style={oneDark}
+        customStyle={{ margin: 0, borderRadius: 0, fontSize: '13px' }}
+        showLineNumbers={false}
+        wrapLongLines
+      >
         {children}
       </SyntaxHighlighter>
     </div>
@@ -39,7 +61,12 @@ function CodeBlock({ language, children }: { language: string; children: string 
 }
 
 // Detect what the model is currently doing based on content patterns
-function detectStreamingPhase(content: string, _thought: string, isThinking: boolean, isWaiting: boolean): {
+function detectStreamingPhase(
+  content: string,
+  _thought: string,
+  isThinking: boolean,
+  isWaiting: boolean
+): {
   label: string
   icon: React.ComponentType<{ className?: string }>
   color: string
@@ -52,7 +79,10 @@ function detectStreamingPhase(content: string, _thought: string, isThinking: boo
   }
   // Check if the latest content suggests coding
   const lastChunk = content.slice(-200)
-  if (lastChunk.includes('```') || lastChunk.match(/\b(function|const|import|class|def|return)\b/)) {
+  if (
+    lastChunk.includes('```') ||
+    lastChunk.match(/\b(function|const|import|class|def|return)\b/)
+  ) {
     return { label: 'Coding', icon: Code, color: 'text-emerald-400' }
   }
   if (content.length > 0) {
@@ -64,15 +94,27 @@ function detectStreamingPhase(content: string, _thought: string, isThinking: boo
 // Animated dots component
 function StreamingDots({ className }: { className?: string }) {
   return (
-    <span className={cn("inline-flex items-center gap-0.5", className)}>
+    <span className={cn('inline-flex items-center gap-0.5', className)}>
       <span className="w-1 h-1 rounded-full bg-current animate-dot-bounce" />
-      <span className="w-1 h-1 rounded-full bg-current animate-dot-bounce" style={{ animationDelay: '0.16s' }} />
-      <span className="w-1 h-1 rounded-full bg-current animate-dot-bounce" style={{ animationDelay: '0.32s' }} />
+      <span
+        className="w-1 h-1 rounded-full bg-current animate-dot-bounce"
+        style={{ animationDelay: '0.16s' }}
+      />
+      <span
+        className="w-1 h-1 rounded-full bg-current animate-dot-bounce"
+        style={{ animationDelay: '0.32s' }}
+      />
     </span>
   )
 }
 
-export default function MessageBubble({ message, isStreaming, isLast, onRegenerate, onEdit }: MessageBubbleProps) {
+export default function MessageBubble({
+  message,
+  isStreaming,
+  isLast,
+  onRegenerate,
+  onEdit
+}: MessageBubbleProps) {
   const isUser = message.role === 'user'
   const isSystem = message.role === 'system'
   const [editing, setEditing] = useState(false)
@@ -89,9 +131,15 @@ export default function MessageBubble({ message, isStreaming, isLast, onRegenera
     setTimeout(() => setMsgCopied(false), 2000)
   }, [message.content])
 
-  const metadata = message.metadata_json ? (() => {
-    try { return JSON.parse(message.metadata_json) } catch { return {} }
-  })() : {}
+  const metadata = message.metadata_json
+    ? (() => {
+        try {
+          return JSON.parse(message.metadata_json)
+        } catch {
+          return {}
+        }
+      })()
+    : {}
 
   const { resolvedModel, thought, speed, ttft, isThinking, isWaiting } = metadata
 
@@ -109,7 +157,12 @@ export default function MessageBubble({ message, isStreaming, isLast, onRegenera
     : null
 
   return (
-    <div className={cn('flex flex-col max-w-[90%] group/bubble', isUser ? 'ml-auto items-end' : 'mr-auto items-start')}>
+    <div
+      className={cn(
+        'flex flex-col max-w-[90%] group/bubble',
+        isUser ? 'ml-auto items-end' : 'mr-auto items-start'
+      )}
+    >
       {/* Model Header */}
       {!isUser && message.model_id && (
         <div className="flex items-center gap-2 mb-1.5 ml-1">
@@ -131,13 +184,21 @@ export default function MessageBubble({ message, isStreaming, isLast, onRegenera
           <div className="relative flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-surface border border-border-subtle">
             {/* Pulse ring behind icon */}
             <div className="relative">
-              <streamPhase.icon className={cn("w-3 h-3 relative z-10", streamPhase.color)} />
-              <div className={cn("absolute inset-0 rounded-full animate-pulse-ring", streamPhase.color, "opacity-30")} />
+              <streamPhase.icon className={cn('w-3 h-3 relative z-10', streamPhase.color)} />
+              <div
+                className={cn(
+                  'absolute inset-0 rounded-full animate-pulse-ring',
+                  streamPhase.color,
+                  'opacity-30'
+                )}
+              />
             </div>
-            <span className={cn("text-[10px] font-bold uppercase tracking-wider", streamPhase.color)}>
+            <span
+              className={cn('text-[10px] font-bold uppercase tracking-wider', streamPhase.color)}
+            >
               {streamPhase.label}
             </span>
-            <StreamingDots className={cn("ml-0.5", streamPhase.color)} />
+            <StreamingDots className={cn('ml-0.5', streamPhase.color)} />
 
             {/* Live speed counter */}
             {speed && Number(speed) > 0 && (
@@ -163,11 +224,13 @@ export default function MessageBubble({ message, isStreaming, isLast, onRegenera
             onClick={() => setThoughtExpanded(!thoughtExpanded)}
             className="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-purple-500/5 transition-colors group/thought"
           >
-            <ChevronRight className={cn(
-              "w-3 h-3 text-purple-400/70 transition-transform duration-200",
-              thoughtExpanded && "rotate-90"
-            )} />
-            <Brain className={cn("w-3.5 h-3.5 text-purple-400", isThinking && "animate-pulse")} />
+            <ChevronRight
+              className={cn(
+                'w-3 h-3 text-purple-400/70 transition-transform duration-200',
+                thoughtExpanded && 'rotate-90'
+              )}
+            />
+            <Brain className={cn('w-3.5 h-3.5 text-purple-400', isThinking && 'animate-pulse')} />
             <span className="text-[11px] font-semibold text-purple-400/80">
               {isThinking ? 'Thinking' : 'View thought process'}
             </span>
@@ -177,7 +240,9 @@ export default function MessageBubble({ message, isStreaming, isLast, onRegenera
             <div className="ml-5 mt-1 px-3 py-2.5 rounded-xl bg-purple-500/5 border border-purple-500/10 animate-fade-in">
               <p className="text-[12px] text-text-secondary/70 leading-relaxed italic whitespace-pre-wrap">
                 {thought}
-                {isThinking && <span className="inline-block w-1.5 h-3.5 bg-purple-400/40 animate-breathing ml-1 align-middle" />}
+                {isThinking && (
+                  <span className="inline-block w-1.5 h-3.5 bg-purple-400/40 animate-breathing ml-1 align-middle" />
+                )}
               </p>
             </div>
           )}
@@ -185,14 +250,16 @@ export default function MessageBubble({ message, isStreaming, isLast, onRegenera
       )}
 
       {/* Message Content Container */}
-      <div className={cn(
-        'relative px-5 py-3.5 rounded-3xl transition-all duration-300',
-        isUser
-          ? 'bg-primary text-white rounded-br-md shadow-sm'
-          : 'bg-surface border border-border-subtle rounded-bl-md shadow-sm hover:shadow-md',
-        // Subtle glow while streaming
-        isStreaming && !isUser && 'border-primary/20 shadow-[0_0_15px_rgba(88,101,242,0.08)]'
-      )}>
+      <div
+        className={cn(
+          'relative px-5 py-3.5 rounded-3xl transition-all duration-300',
+          isUser
+            ? 'bg-primary text-white rounded-br-md shadow-sm'
+            : 'bg-surface border border-border-subtle rounded-bl-md shadow-sm hover:shadow-md',
+          // Subtle glow while streaming
+          isStreaming && !isUser && 'border-primary/20 shadow-[0_0_15px_rgba(88,101,242,0.08)]'
+        )}
+      >
         {/* User Content */}
         {isUser && editing ? (
           <div className="space-y-2 min-w-[300px]">
@@ -204,8 +271,18 @@ export default function MessageBubble({ message, isStreaming, isLast, onRegenera
               className="w-full text-sm bg-white/10 rounded-xl px-3 py-2 text-white resize-none focus:outline-none border border-white/20"
             />
             <div className="flex gap-2 justify-end">
-              <button onClick={() => setEditing(false)} className="text-[10px] font-bold px-3 py-1 bg-white/10 rounded-lg hover:bg-white/20">Cancel</button>
-              <button onClick={handleEditSubmit} className="text-[10px] font-bold px-3 py-1 bg-white rounded-lg text-primary hover:bg-white/90">Save Changes</button>
+              <button
+                onClick={() => setEditing(false)}
+                className="text-[10px] font-bold px-3 py-1 bg-white/10 rounded-lg hover:bg-white/20"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleEditSubmit}
+                className="text-[10px] font-bold px-3 py-1 bg-white rounded-lg text-primary hover:bg-white/90"
+              >
+                Save Changes
+              </button>
             </div>
           </div>
         ) : isUser ? (
@@ -220,25 +297,40 @@ export default function MessageBubble({ message, isStreaming, isLast, onRegenera
                 <div className="flex flex-col gap-3 py-2 animate-fade-in-up">
                   <div className="flex items-center gap-2">
                     <div className="w-2 h-2 rounded-full bg-amber-400/60 animate-breathing" />
-                    <span className="text-[11px] text-text-muted/50 font-medium">Waiting for model response...</span>
+                    <span className="text-[11px] text-text-muted/50 font-medium">
+                      Waiting for model response...
+                    </span>
                   </div>
                   <div className="space-y-2">
                     <div className="h-3 w-3/4 bg-text-muted/8 rounded-full animate-skeleton" />
-                    <div className="h-3 w-1/2 bg-text-muted/8 rounded-full animate-skeleton" style={{ animationDelay: '0.15s' }} />
-                    <div className="h-3 w-2/3 bg-text-muted/8 rounded-full animate-skeleton" style={{ animationDelay: '0.3s' }} />
+                    <div
+                      className="h-3 w-1/2 bg-text-muted/8 rounded-full animate-skeleton"
+                      style={{ animationDelay: '0.15s' }}
+                    />
+                    <div
+                      className="h-3 w-2/3 bg-text-muted/8 rounded-full animate-skeleton"
+                      style={{ animationDelay: '0.3s' }}
+                    />
                   </div>
                 </div>
               ) : (
-                <div className={cn(!message.content && "min-h-[20px]")}>
+                <div className={cn(!message.content && 'min-h-[20px]')}>
                   <Markdown
                     remarkPlugins={[remarkGfm]}
                     components={{
                       code({ className, children, ...props }) {
                         const match = /language-(\w+)/.exec(className || '')
                         const content = String(children).replace(/\n$/, '')
-                        return match
-                          ? <CodeBlock language={match[1]}>{content}</CodeBlock>
-                          : <code className="px-1.5 py-0.5 rounded bg-white/10 text-[13px] font-mono font-bold" {...props}>{children}</code>
+                        return match ? (
+                          <CodeBlock language={match[1]}>{content}</CodeBlock>
+                        ) : (
+                          <code
+                            className="px-1.5 py-0.5 rounded bg-white/10 text-[13px] font-mono font-bold"
+                            {...props}
+                          >
+                            {children}
+                          </code>
+                        )
                       }
                     }}
                   >
@@ -256,18 +348,24 @@ export default function MessageBubble({ message, isStreaming, isLast, onRegenera
       </div>
 
       {/* Footer Metrics & Actions */}
-      <div className={cn(
-        "flex items-center gap-4 mt-2 transition-opacity",
-        isUser ? "mr-2 justify-end" : "ml-2 justify-start",
-        isStreaming ? "opacity-100" : "opacity-0 group-hover/bubble:opacity-100"
-      )}>
+      <div
+        className={cn(
+          'flex items-center gap-4 mt-2 transition-opacity',
+          isUser ? 'mr-2 justify-end' : 'ml-2 justify-start',
+          isStreaming ? 'opacity-100' : 'opacity-0 group-hover/bubble:opacity-100'
+        )}
+      >
         {/* Copy */}
         {!isStreaming && (
           <button
             onClick={handleCopyMessage}
             className="flex items-center gap-1 text-[10px] font-bold text-text-muted hover:text-text transition-colors"
           >
-            {msgCopied ? <Check className="w-3 h-3 text-green-500" /> : <Copy className="w-3 h-3" />}
+            {msgCopied ? (
+              <Check className="w-3 h-3 text-green-500" />
+            ) : (
+              <Copy className="w-3 h-3" />
+            )}
             {msgCopied ? 'Copied' : 'Copy'}
           </button>
         )}
@@ -275,7 +373,10 @@ export default function MessageBubble({ message, isStreaming, isLast, onRegenera
         {/* User edit */}
         {isUser && onEdit && !isStreaming && (
           <button
-            onClick={() => { setEditText(message.content); setEditing(true) }}
+            onClick={() => {
+              setEditText(message.content)
+              setEditing(true)
+            }}
             className="flex items-center gap-1 text-[10px] font-bold text-text-muted hover:text-text transition-colors"
           >
             <Pencil className="w-3 h-3" />
@@ -287,13 +388,19 @@ export default function MessageBubble({ message, isStreaming, isLast, onRegenera
         {!isUser && !isStreaming && (
           <>
             {speed && (
-              <div className="flex items-center gap-1 text-[10px] font-bold text-text-muted" title="Generation Speed">
+              <div
+                className="flex items-center gap-1 text-[10px] font-bold text-text-muted"
+                title="Generation Speed"
+              >
                 <Activity className="w-3 h-3" />
                 {speed} tok/s
               </div>
             )}
             {ttft && (
-              <div className="flex items-center gap-1 text-[10px] font-bold text-text-muted" title="Time to First Token">
+              <div
+                className="flex items-center gap-1 text-[10px] font-bold text-text-muted"
+                title="Time to First Token"
+              >
                 <Clock className="w-3 h-3" />
                 {ttft}ms
               </div>

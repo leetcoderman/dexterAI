@@ -1,4 +1,4 @@
-import { contextBridge, ipcRenderer, webFrame } from 'electron';
+import { contextBridge, ipcRenderer, webFrame } from 'electron'
 import {
   VerifyResult,
   TestRequest,
@@ -16,138 +16,191 @@ import {
   AgentRequest,
   AgentToolEvent,
   AgentApprovalRequest
-} from '@dexterai/registry-types';
+} from '@dexterai/registry-types'
 
-type UnsubscribeFn = () => void;
+type UnsubscribeFn = () => void
 
 interface DexteraiAPI {
   credentials: {
-    save(providerId: string, key: string, extras?: Record<string, string>): Promise<void>;
-    delete(providerId: string): Promise<void>;
-    exists(providerId: string): Promise<boolean>;
-    listConnected(): Promise<{ providers: string[]; models: string[] }>;
-  };
+    save(providerId: string, key: string, extras?: Record<string, string>): Promise<void>
+    delete(providerId: string): Promise<void>
+    exists(providerId: string): Promise<boolean>
+    listConnected(): Promise<{
+      providers: string[]
+      models: string[]
+      modelsByProvider: Record<string, string[]>
+    }>
+  }
   provider: {
-    verify(providerId: string, modelId: string): Promise<VerifyResult>;
-    test(request: TestRequest): Promise<void>;
-    cancelTest(requestId: string): Promise<void>;
-  };
+    verify(providerId: string, modelId: string): Promise<VerifyResult>
+    test(request: TestRequest): Promise<void>
+    cancelTest(requestId: string): Promise<void>
+  }
   registry: {
-    getModels(category?: string): Promise<RegistryModel[]>;
-    checkForUpdate(): Promise<{ hasUpdate: boolean; version: string }>;
-    applyUpdate(): Promise<void>;
-  };
+    getModels(category?: string): Promise<RegistryModel[]>
+    checkForUpdate(): Promise<{ hasUpdate: boolean; version: string }>
+    applyUpdate(): Promise<void>
+  }
   history: {
-    getRunsForModel(modelId: string, limit?: number): Promise<TestRun[]>;
-    exportAsCSV(modelId: string): Promise<string>;
-    deleteRun(runId: string): Promise<void>;
-  };
+    getRunsForModel(modelId: string, limit?: number): Promise<TestRun[]>
+    exportAsCSV(modelId: string): Promise<string>
+    deleteRun(runId: string): Promise<void>
+  }
   templates: {
-    list(category: string): Promise<PromptTemplate[]>;
-    save(template: Omit<PromptTemplate, 'id' | 'created_at' | 'updated_at'>): Promise<PromptTemplate>;
-    delete(templateId: string): Promise<void>;
-  };
+    list(category: string): Promise<PromptTemplate[]>
+    save(
+      template: Omit<PromptTemplate, 'id' | 'created_at' | 'updated_at'>
+    ): Promise<PromptTemplate>
+    delete(templateId: string): Promise<void>
+  }
   files: {
-    openAudioPicker(): Promise<{ path: string; name: string } | null>;
+    openAudioPicker(): Promise<{ path: string; name: string } | null>
     saveFile(args: {
-      content: string | Buffer | Uint8Array;
-      title: string;
-      defaultName: string;
-      filters: Electron.FileFilter[];
-    }): Promise<{ success: boolean; filePath?: string; error?: string }>;
-  };
+      content: string | Buffer | Uint8Array
+      title: string
+      defaultName: string
+      filters: Electron.FileFilter[]
+    }): Promise<{ success: boolean; filePath?: string; error?: string }>
+  }
   fs: {
-    openFolder(): Promise<{ rootPath: string; name: string } | null>;
-    readDir(args: { rootPath: string; ignorePatterns?: string[] }): Promise<any[]>;
-    readDirShallow(args: { dirPath: string; rootPath: string }): Promise<any[]>;
-    readFile(args: { filePath: string; rootPath: string }): Promise<{ content: string; size: number } | { error: string }>;
-    writeFile(args: { filePath: string; rootPath: string; content: string }): Promise<{ success: boolean; error?: string }>;
-    stat(args: { filePath: string; rootPath: string }): Promise<{ size: number; modified: string; isDir: boolean; extension: string } | { error: string }>;
-    search(args: { rootPath: string; query: string; filePattern?: string }): Promise<{ results: { filePath: string; line: number; text: string }[]; truncated: boolean }>;
-  };
+    openFolder(): Promise<{ rootPath: string; name: string } | null>
+    readDir(args: { rootPath: string; ignorePatterns?: string[] }): Promise<any[]>
+    readDirShallow(args: { dirPath: string; rootPath: string }): Promise<any[]>
+    readFile(args: {
+      filePath: string
+      rootPath: string
+    }): Promise<{ content: string; size: number } | { error: string }>
+    writeFile(args: {
+      filePath: string
+      rootPath: string
+      content: string
+    }): Promise<{ success: boolean; error?: string }>
+    stat(args: {
+      filePath: string
+      rootPath: string
+    }): Promise<
+      { size: number; modified: string; isDir: boolean; extension: string } | { error: string }
+    >
+    search(args: {
+      rootPath: string
+      query: string
+      filePattern?: string
+    }): Promise<{ results: { filePath: string; line: number; text: string }[]; truncated: boolean }>
+  }
 
   conversations: {
-    list(): Promise<ConversationSummary[]>;
-    get(id: string): Promise<Conversation | null>;
-    create(title?: string, settingsJson?: string): Promise<Conversation | null>;
-    update(id: string, updates: { title?: string; settings_json?: string }): Promise<{ success: boolean }>;
-    delete(id: string): Promise<{ success: boolean }>;
-    export(id: string, format: 'markdown' | 'json'): Promise<string>;
-  };
+    list(): Promise<ConversationSummary[]>
+    get(id: string): Promise<Conversation | null>
+    create(title?: string, settingsJson?: string): Promise<Conversation | null>
+    update(
+      id: string,
+      updates: { title?: string; settings_json?: string }
+    ): Promise<{ success: boolean }>
+    delete(id: string): Promise<{ success: boolean }>
+    export(id: string, format: 'markdown' | 'json'): Promise<string>
+  }
   messages: {
-    list(conversationId: string): Promise<ChatMessage[]>;
+    list(conversationId: string): Promise<ChatMessage[]>
     add(message: {
-      conversation_id: string;
-      role: string;
-      content: string;
-      model_id?: string;
-      provider_id?: string;
-      token_count?: number;
-      metadata_json?: string;
-    }): Promise<ChatMessage | null>;
-    update(id: string, updates: { content?: string; token_count?: number; metadata_json?: string }): Promise<{ success: boolean }>;
-    delete(id: string): Promise<{ success: boolean }>;
-    search(query: string): Promise<(ChatMessage & { conversation_title: string })[]>;
-  };
+      conversation_id: string
+      role: string
+      content: string
+      model_id?: string
+      provider_id?: string
+      token_count?: number
+      metadata_json?: string
+    }): Promise<ChatMessage | null>
+    update(
+      id: string,
+      updates: { content?: string; token_count?: number; metadata_json?: string }
+    ): Promise<{ success: boolean }>
+    delete(id: string): Promise<{ success: boolean }>
+    search(query: string): Promise<(ChatMessage & { conversation_title: string })[]>
+  }
   chat: {
     send(request: {
-      conversationId: string;
-      requestId: string;
-      modelId: string;
-      providerId: string;
-      messages: { role: string; content: string }[];
-      params: Record<string, any>;
-    }): Promise<void>;
-    cancel(requestId: string): Promise<void>;
-  };
+      conversationId: string
+      requestId: string
+      modelId: string
+      providerId: string
+      messages: { role: string; content: string }[]
+      params: Record<string, any>
+    }): Promise<void>
+    cancel(requestId: string): Promise<void>
+  }
   agent: {
-    send(request: AgentRequest): Promise<void>;
-    cancel(requestId: string): Promise<void>;
-    approve(approvalId: string): Promise<void>;
-    reject(approvalId: string): Promise<void>;
-  };
+    send(request: AgentRequest): Promise<void>
+    cancel(requestId: string): Promise<void>
+    approve(approvalId: string): Promise<void>
+    reject(approvalId: string): Promise<void>
+  }
   terminal: {
-    create(args: { id: string; cwd: string; shell?: string }): Promise<{ id: string; error?: string }>;
-    write(args: { id: string; data: string }): void;
-    resize(args: { id: string; cols: number; rows: number }): void;
-    dispose(args: { id: string }): Promise<void>;
-  };
+    create(args: {
+      id: string
+      cwd: string
+      shell?: string
+    }): Promise<{ id: string; error?: string }>
+    write(args: { id: string; data: string }): void
+    resize(args: { id: string; cols: number; rows: number }): void
+    dispose(args: { id: string }): Promise<void>
+  }
   memory: {
-    list(): Promise<Memory[]>;
-    save(memory: { id?: string; key: string; content: string; source_conversation_id?: string }): Promise<Memory | null>;
-    delete(id: string): Promise<{ success: boolean }>;
-    togglePin(id: string): Promise<{ success: boolean }>;
-    extract(conversationId: string, providerId: string, modelId: string): Promise<{ id: string; key: string; content: string }[]>;
-  };
+    list(): Promise<Memory[]>
+    save(memory: {
+      id?: string
+      key: string
+      content: string
+      source_conversation_id?: string
+    }): Promise<Memory | null>
+    delete(id: string): Promise<{ success: boolean }>
+    togglePin(id: string): Promise<{ success: boolean }>
+    extract(
+      conversationId: string,
+      providerId: string,
+      modelId: string
+    ): Promise<{ id: string; key: string; content: string }[]>
+  }
   settings: {
-    deleteData(mode: 'chat' | 'keys_analytics' | 'everything'): Promise<{ success: boolean; error?: string }>;
-  };
+    deleteData(
+      mode: 'chat' | 'keys_analytics' | 'everything'
+    ): Promise<{ success: boolean; error?: string }>
+  }
   app: {
-    openWindow(): Promise<void>;
-  };
+    openWindow(): Promise<void>
+  }
   zoom: {
-    setFactor(factor: number): void;
-    getFactor(): number;
-  };
+    setFactor(factor: number): void
+    getFactor(): number
+  }
 
-  on(channel: 'test:chunk', handler: (chunk: StreamChunk) => void): UnsubscribeFn;
-  on(channel: 'test:done', handler: (metrics: EvaluationMetrics) => void): UnsubscribeFn;
-  on(channel: 'test:error', handler: (error: ProviderError) => void): UnsubscribeFn;
-  on(channel: 'chat:chunk', handler: (chunk: StreamChunk) => void): UnsubscribeFn;
-  on(channel: 'chat:done', handler: (metrics: EvaluationMetrics) => void): UnsubscribeFn;
-  on(channel: 'chat:error', handler: (error: ProviderError) => void): UnsubscribeFn;
-  on(channel: 'chat:title-updated', handler: (data: { conversationId: string; title: string }) => void): UnsubscribeFn;
-  on(channel: 'registry:updated', handler: (version: string) => void): UnsubscribeFn;
-  on(channel: 'job:progress', handler: (progress: JobProgress) => void): UnsubscribeFn;
-  on(channel: 'agent:tool-result', handler: (data: AgentToolEvent) => void): UnsubscribeFn;
-  on(channel: 'agent:approval-required', handler: (data: AgentApprovalRequest) => void): UnsubscribeFn;
-  on(channel: 'terminal:data', handler: (data: { id: string; data: string }) => void): UnsubscribeFn;
-  on(channel: 'terminal:exit', handler: (data: { id: string; exitCode: number }) => void): UnsubscribeFn;
+  on(channel: 'test:chunk', handler: (chunk: StreamChunk) => void): UnsubscribeFn
+  on(channel: 'test:done', handler: (metrics: EvaluationMetrics) => void): UnsubscribeFn
+  on(channel: 'test:error', handler: (error: ProviderError) => void): UnsubscribeFn
+  on(channel: 'chat:chunk', handler: (chunk: StreamChunk) => void): UnsubscribeFn
+  on(channel: 'chat:done', handler: (metrics: EvaluationMetrics) => void): UnsubscribeFn
+  on(channel: 'chat:error', handler: (error: ProviderError) => void): UnsubscribeFn
+  on(
+    channel: 'chat:title-updated',
+    handler: (data: { conversationId: string; title: string }) => void
+  ): UnsubscribeFn
+  on(channel: 'registry:updated', handler: (version: string) => void): UnsubscribeFn
+  on(channel: 'job:progress', handler: (progress: JobProgress) => void): UnsubscribeFn
+  on(channel: 'agent:tool-result', handler: (data: AgentToolEvent) => void): UnsubscribeFn
+  on(
+    channel: 'agent:approval-required',
+    handler: (data: AgentApprovalRequest) => void
+  ): UnsubscribeFn
+  on(channel: 'terminal:data', handler: (data: { id: string; data: string }) => void): UnsubscribeFn
+  on(
+    channel: 'terminal:exit',
+    handler: (data: { id: string; exitCode: number }) => void
+  ): UnsubscribeFn
 }
 
 const api: DexteraiAPI = {
   credentials: {
-    save: (providerId, key, extras) => ipcRenderer.invoke('credentials:save', providerId, key, extras),
+    save: (providerId, key, extras) =>
+      ipcRenderer.invoke('credentials:save', providerId, key, extras),
     delete: (providerId) => ipcRenderer.invoke('credentials:delete', providerId),
     exists: (providerId) => ipcRenderer.invoke('credentials:exists', providerId),
     listConnected: () => ipcRenderer.invoke('credentials:listConnected')
@@ -163,7 +216,8 @@ const api: DexteraiAPI = {
     applyUpdate: () => ipcRenderer.invoke('registry:applyUpdate')
   },
   history: {
-    getRunsForModel: (modelId, limit) => ipcRenderer.invoke('history:getRunsForModel', modelId, limit),
+    getRunsForModel: (modelId, limit) =>
+      ipcRenderer.invoke('history:getRunsForModel', modelId, limit),
     exportAsCSV: (modelId) => ipcRenderer.invoke('history:exportAsCSV', modelId),
     deleteRun: (runId) => ipcRenderer.invoke('history:deleteRun', runId)
   },
@@ -188,7 +242,8 @@ const api: DexteraiAPI = {
   conversations: {
     list: () => ipcRenderer.invoke('conversations:list'),
     get: (id) => ipcRenderer.invoke('conversations:get', id),
-    create: (title?, settingsJson?) => ipcRenderer.invoke('conversations:create', title, settingsJson),
+    create: (title?, settingsJson?) =>
+      ipcRenderer.invoke('conversations:create', title, settingsJson),
     update: (id, updates) => ipcRenderer.invoke('conversations:update', id, updates),
     delete: (id) => ipcRenderer.invoke('conversations:delete', id),
     export: (id, format) => ipcRenderer.invoke('conversations:export', id, format)
@@ -221,7 +276,8 @@ const api: DexteraiAPI = {
     save: (memory) => ipcRenderer.invoke('memory:save', memory),
     delete: (id) => ipcRenderer.invoke('memory:delete', id),
     togglePin: (id) => ipcRenderer.invoke('memory:togglePin', id),
-    extract: (conversationId, providerId, modelId) => ipcRenderer.invoke('memory:extract', conversationId, providerId, modelId)
+    extract: (conversationId, providerId, modelId) =>
+      ipcRenderer.invoke('memory:extract', conversationId, providerId, modelId)
   },
   settings: {
     deleteData: (mode) => ipcRenderer.invoke('settings:deleteData', mode)
@@ -235,19 +291,19 @@ const api: DexteraiAPI = {
   },
 
   on: (channel: string, callback: (...args: any[]) => void) => {
-    const subscription = (_event: Electron.IpcRendererEvent, ...args: any[]) => callback(...args);
-    ipcRenderer.on(channel, subscription);
-    return () => ipcRenderer.removeListener(channel, subscription);
+    const subscription = (_event: Electron.IpcRendererEvent, ...args: any[]) => callback(...args)
+    ipcRenderer.on(channel, subscription)
+    return () => ipcRenderer.removeListener(channel, subscription)
   }
-};
+}
 
 if (process.contextIsolated) {
   try {
-    contextBridge.exposeInMainWorld('dexterai', api);
+    contextBridge.exposeInMainWorld('dexterai', api)
   } catch (error) {
-    console.error(error);
+    console.error(error)
   }
 } else {
   // @ts-ignore
-  window.dexterai = api;
+  window.dexterai = api
 }

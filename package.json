@@ -1,6 +1,6 @@
 {
   "name": "dexterai",
-  "version": "3.11.0",
+  "version": "3.2.0",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"

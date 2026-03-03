@@ -3,7 +3,8 @@ import type { ToolDefinition } from '@dexterai/registry-types'
 export const AGENT_TOOLS: ToolDefinition[] = [
   {
     name: 'read_file',
-    description: 'Read the contents of a file at the given path relative to the project root. Returns the file content as a string. Use this to understand existing code before making changes.',
+    description:
+      'Read the contents of a file at the given path relative to the project root. Returns the file content as a string. Use this to understand existing code before making changes.',
     parameters: {
       type: 'object',
       properties: {
@@ -17,7 +18,8 @@ export const AGENT_TOOLS: ToolDefinition[] = [
   },
   {
     name: 'write_file',
-    description: 'Write content to a file at the given path relative to the project root. Creates the file if it does not exist, or overwrites it if it does. Parent directories are created automatically.',
+    description:
+      'Write content to a file at the given path relative to the project root. Creates the file if it does not exist, or overwrites it if it does. Parent directories are created automatically.',
     parameters: {
       type: 'object',
       properties: {
@@ -35,7 +37,8 @@ export const AGENT_TOOLS: ToolDefinition[] = [
   },
   {
     name: 'list_directory',
-    description: 'List files and directories at the given path relative to the project root. Returns a structured list of entries with their names and types (file or directory).',
+    description:
+      'List files and directories at the given path relative to the project root. Returns a structured list of entries with their names and types (file or directory).',
     parameters: {
       type: 'object',
       properties: {
@@ -49,7 +52,8 @@ export const AGENT_TOOLS: ToolDefinition[] = [
   },
   {
     name: 'search_code',
-    description: 'Search for a text pattern across all files in the project. Returns matching lines with file paths and line numbers. Useful for finding usages, definitions, or patterns.',
+    description:
+      'Search for a text pattern across all files in the project. Returns matching lines with file paths and line numbers. Useful for finding usages, definitions, or patterns.',
     parameters: {
       type: 'object',
       properties: {
@@ -67,7 +71,8 @@ export const AGENT_TOOLS: ToolDefinition[] = [
   },
   {
     name: 'execute_command',
-    description: 'Execute a shell command in the project root directory. Use this for running builds, tests, linters, git commands, package managers, or any other CLI tool. The command runs in a shell with a 30-second timeout. Returns stdout and stderr.',
+    description:
+      'Execute a shell command in the project root directory. Use this for running builds, tests, linters, git commands, package managers, or any other CLI tool. The command runs in a shell with a 30-second timeout. Returns stdout and stderr.',
     parameters: {
       type: 'object',
       properties: {

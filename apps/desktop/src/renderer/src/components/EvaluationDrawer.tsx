@@ -1,5 +1,14 @@
 import { useState, useEffect } from 'react'
-import { ChevronUp, ChevronDown, Activity, Clock, AlignLeft, CheckCircle2, Box, Cpu } from 'lucide-react'
+import {
+  ChevronUp,
+  ChevronDown,
+  Activity,
+  Clock,
+  AlignLeft,
+  CheckCircle2,
+  Box,
+  Cpu
+} from 'lucide-react'
 import { cn } from '@dexterai/shared-utils'
 import { EvaluationMetrics } from '@dexterai/registry-types'
 

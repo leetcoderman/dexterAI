@@ -90,7 +90,35 @@ export function detectLanguage(filename: string): string {
 
 function getFileIcon(name: string) {
   const ext = name.split('.').pop()?.toLowerCase() ?? ''
-  if (['ts', 'tsx', 'js', 'jsx', 'py', 'rs', 'go', 'java', 'rb', 'php', 'c', 'cpp', 'swift', 'vue', 'svelte', 'astro', 'mdx', 'cs', 'sass', 'proto', 'ps1', 'bat', 'clj', 'ex', 'exs'].includes(ext)) {
+  if (
+    [
+      'ts',
+      'tsx',
+      'js',
+      'jsx',
+      'py',
+      'rs',
+      'go',
+      'java',
+      'rb',
+      'php',
+      'c',
+      'cpp',
+      'swift',
+      'vue',
+      'svelte',
+      'astro',
+      'mdx',
+      'cs',
+      'sass',
+      'proto',
+      'ps1',
+      'bat',
+      'clj',
+      'ex',
+      'exs'
+    ].includes(ext)
+  ) {
     return FileCode
   }
   if (ext === 'json' || ext === 'vue' || ext === 'svelte') return FileJson
@@ -155,36 +183,38 @@ function TreeNode({
         style={{ paddingLeft: 8 + depth * 16 }}
         title={node.path}
       >
-        {isDir && (
-          isExpanded
-            ? <ChevronDown className="w-3.5 h-3.5 shrink-0 text-text-muted" />
-            : <ChevronRight className="w-3.5 h-3.5 shrink-0 text-text-muted" />
-        )}
+        {isDir &&
+          (isExpanded ? (
+            <ChevronDown className="w-3.5 h-3.5 shrink-0 text-text-muted" />
+          ) : (
+            <ChevronRight className="w-3.5 h-3.5 shrink-0 text-text-muted" />
+          ))}
         {!isDir && <span className="w-3.5 shrink-0" />}
-        <FileIcon className={cn(
-          'w-3.5 h-3.5 shrink-0',
-          isDir ? 'text-amber-500' : 'text-text-muted'
-        )} />
+        <FileIcon
+          className={cn('w-3.5 h-3.5 shrink-0', isDir ? 'text-amber-500' : 'text-text-muted')}
+        />
         <span className="truncate min-w-0">{node.name}</span>
         {isDir && loadingDirs.has(node.path) && (
           <Loader2 className="w-3 h-3 animate-spin text-text-muted ml-auto shrink-0" />
         )}
       </button>
-      {isDir && isExpanded && sortedChildren.map((child) => (
-        <TreeNode
-          key={child.path}
-          node={child}
-          depth={depth + 1}
-          rootPath={rootPath}
-          activeFilePath={activeFilePath}
-          onFileSelect={onFileSelect}
-          expandedDirs={expandedDirs}
-          toggleDir={toggleDir}
-          expandedChildren={expandedChildren}
-          setExpandedChildren={setExpandedChildren}
-          loadingDirs={loadingDirs}
-        />
-      ))}
+      {isDir &&
+        isExpanded &&
+        sortedChildren.map((child) => (
+          <TreeNode
+            key={child.path}
+            node={child}
+            depth={depth + 1}
+            rootPath={rootPath}
+            activeFilePath={activeFilePath}
+            onFileSelect={onFileSelect}
+            expandedDirs={expandedDirs}
+            toggleDir={toggleDir}
+            expandedChildren={expandedChildren}
+            setExpandedChildren={setExpandedChildren}
+            loadingDirs={loadingDirs}
+          />
+        ))}
     </>
   )
 }
@@ -204,37 +234,40 @@ export default function FileExplorer({
 
   const projectName = rootPath.split('/').pop() ?? rootPath
 
-  const toggleDir = useCallback(async (dirPath: string) => {
-    setExpandedDirs((prev) => {
-      const next = new Set(prev)
-      if (next.has(dirPath)) {
-        next.delete(dirPath)
-      } else {
-        next.add(dirPath)
-      }
-      return next
-    })
-
-    // Lazy-load children if not already loaded
-    if (!expandedDirs.has(dirPath) && !expandedChildren[dirPath]) {
-      setLoadingDirs((prev) => new Set(prev).add(dirPath))
-      try {
-        const children = await window.dexterai.fs.readDirShallow({
-          dirPath,
-          rootPath
-        })
-        setExpandedChildren((prev) => ({ ...prev, [dirPath]: children }))
-      } catch (e) {
-        console.error('Failed to load directory:', e)
-      } finally {
-        setLoadingDirs((prev) => {
-          const next = new Set(prev)
+  const toggleDir = useCallback(
+    async (dirPath: string) => {
+      setExpandedDirs((prev) => {
+        const next = new Set(prev)
+        if (next.has(dirPath)) {
           next.delete(dirPath)
-          return next
-        })
+        } else {
+          next.add(dirPath)
+        }
+        return next
+      })
+
+      // Lazy-load children if not already loaded
+      if (!expandedDirs.has(dirPath) && !expandedChildren[dirPath]) {
+        setLoadingDirs((prev) => new Set(prev).add(dirPath))
+        try {
+          const children = await window.dexterai.fs.readDirShallow({
+            dirPath,
+            rootPath
+          })
+          setExpandedChildren((prev) => ({ ...prev, [dirPath]: children }))
+        } catch (e) {
+          console.error('Failed to load directory:', e)
+        } finally {
+          setLoadingDirs((prev) => {
+            const next = new Set(prev)
+            next.delete(dirPath)
+            return next
+          })
+        }
       }
-    }
-  }, [rootPath, expandedDirs, expandedChildren])
+    },
+    [rootPath, expandedDirs, expandedChildren]
+  )
 
   const sorted = sortNodes(tree || [])
 

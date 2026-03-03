@@ -2,7 +2,13 @@ import { useState, useEffect, useRef, useMemo } from 'react'
 import { useParams } from 'react-router-dom'
 import { Loader2 } from 'lucide-react'
 import { useAppStore } from '../store'
-import { startStreamSession, attachView, detachView, cancelSession, getActiveSession } from '../store/streaming-manager'
+import {
+  startStreamSession,
+  attachView,
+  detachView,
+  cancelSession,
+  getActiveSession
+} from '../store/streaming-manager'
 import ChatInput from '../components/chat/ChatInput'
 import MessageBubble from '../components/chat/MessageBubble'
 import SettingsDrawer from '../components/chat/SettingsDrawer'
@@ -16,6 +22,7 @@ export default function ChatScreen() {
     loadAllModels,
     connectedProviders,
     connectedModels,
+    modelsByProvider,
     selectedModelId,
     selectedProviderId,
     setSelectedModel,
@@ -25,8 +32,8 @@ export default function ChatScreen() {
   } = useAppStore()
 
   // Read streaming session from global manager via Zustand
-  const streamSession = useAppStore(
-    (s) => conversationId ? s.streamingSessions[conversationId] : undefined
+  const streamSession = useAppStore((s) =>
+    conversationId ? s.streamingSessions[conversationId] : undefined
   )
   const isStreaming = streamSession?.status === 'streaming'
 
@@ -90,7 +97,13 @@ export default function ChatScreen() {
       }
       return m
     })
-  }, [messages, streamSession?.displayText, streamSession?.displayMeta, streamSession?.assistantMsgId, streamSession?.status])
+  }, [
+    messages,
+    streamSession?.displayText,
+    streamSession?.displayMeta,
+    streamSession?.assistantMsgId,
+    streamSession?.status
+  ])
 
   // Auto-scroll
   useEffect(() => {
@@ -149,7 +162,9 @@ export default function ChatScreen() {
         messages: contextMessages,
         params: {
           temperature: s.temperature,
-          maxTokens: allModels.find(m => m.id === selectedModelId && m.provider_id === selectedProviderId)?.max_output_tokens || 4096
+          maxTokens:
+            allModels.find((m) => m.id === selectedModelId && m.provider_id === selectedProviderId)
+              ?.max_output_tokens || 4096
         }
       })
     } catch (e: any) {
@@ -161,7 +176,7 @@ export default function ChatScreen() {
       }
       cancelSession(conversationId)
       setMessages((prev) =>
-        prev.map((m) => m.id === assistantMsg.id ? { ...m, content: errorText } : m)
+        prev.map((m) => (m.id === assistantMsg.id ? { ...m, content: errorText } : m))
       )
     }
 
@@ -252,7 +267,11 @@ export default function ChatScreen() {
               message={m}
               isStreaming={isStreaming && m.id === streamSession?.assistantMsgId}
               isLast={i === displayMessages.length - 1}
-              onRegenerate={m.role === 'assistant' && i === displayMessages.length - 1 ? handleRegenerate : undefined}
+              onRegenerate={
+                m.role === 'assistant' && i === displayMessages.length - 1
+                  ? handleRegenerate
+                  : undefined
+              }
               onEdit={m.role === 'user' ? handleEditMessage : undefined}
             />
           ))
@@ -270,6 +289,7 @@ export default function ChatScreen() {
         selectedProviderId={selectedProviderId}
         connectedProviders={connectedProviders}
         connectedModels={connectedModels}
+        modelsByProvider={modelsByProvider}
         onModelChange={setSelectedModel}
       />
 

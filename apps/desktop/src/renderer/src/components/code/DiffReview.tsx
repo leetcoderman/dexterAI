@@ -75,9 +75,21 @@ export default function DiffReview({
 function detectLanguageFromPath(filePath: string): string {
   const ext = filePath.split('.').pop()?.toLowerCase() ?? ''
   const map: Record<string, string> = {
-    ts: 'typescript', tsx: 'typescriptreact', js: 'javascript', jsx: 'javascriptreact',
-    py: 'python', rs: 'rust', go: 'go', json: 'json', md: 'markdown', css: 'css',
-    html: 'html', sql: 'sql', yaml: 'yaml', yml: 'yaml', sh: 'shell'
+    ts: 'typescript',
+    tsx: 'typescriptreact',
+    js: 'javascript',
+    jsx: 'javascriptreact',
+    py: 'python',
+    rs: 'rust',
+    go: 'go',
+    json: 'json',
+    md: 'markdown',
+    css: 'css',
+    html: 'html',
+    sql: 'sql',
+    yaml: 'yaml',
+    yml: 'yaml',
+    sh: 'shell'
   }
   return map[ext] ?? 'plaintext'
 }

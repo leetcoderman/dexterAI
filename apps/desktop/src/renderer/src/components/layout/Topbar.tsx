@@ -1,5 +1,17 @@
 import { useLocation, useParams, useNavigate } from 'react-router-dom'
-import { Plus, Settings2, Download, ChevronDown, FileText, File as FileIcon, Type, X, FolderOpen, ExternalLink } from 'lucide-react'
+import {
+  Plus,
+  Settings2,
+  Download,
+  ChevronDown,
+  FileText,
+  File as FileIcon,
+  Type,
+  X,
+  FolderOpen,
+  ExternalLink,
+  Bug
+} from 'lucide-react'
 import { useState, useRef, useEffect } from 'react'
 import { useAppStore } from '../../store'
 import EditableTitle from '../chat/EditableTitle'
@@ -176,6 +188,15 @@ export default function Topbar() {
           {count} Connected
         </div>
 
+        {/* Report a Bug Button */}
+        <button
+          onClick={() => navigate('/report-bug')}
+          className="flex items-center gap-1.5 px-3 py-1 rounded-md text-[10px] font-bold bg-red-500/10 text-red-500 hover:bg-red-500/20 border border-red-500/10 transition-colors no-drag"
+        >
+          <Bug className="w-3.5 h-3.5" />
+          Report a Bug
+        </button>
+
         {/* Workspace Controls */}
         {location.pathname === '/code' && projectRoot && (
           <div className="flex items-center gap-1 ml-2 border-l border-border-subtle pl-3">
@@ -235,7 +256,9 @@ export default function Topbar() {
             >
               <Download className="w-3.5 h-3.5" />
               {isExporting ? 'Exporting...' : 'Export'}
-              <ChevronDown className={cn('w-3 h-3 transition-transform', isExportOpen && 'rotate-180')} />
+              <ChevronDown
+                className={cn('w-3 h-3 transition-transform', isExportOpen && 'rotate-180')}
+              />
             </button>
 
             {isExportOpen && (

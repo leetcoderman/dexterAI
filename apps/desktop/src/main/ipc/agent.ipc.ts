@@ -66,13 +66,15 @@ function estimateTokens(msg: any): number {
   if (typeof msg.content === 'string') {
     text = msg.content || ''
   } else if (Array.isArray(msg.content)) {
-    text = msg.content.map((c: any) => {
-      if (typeof c === 'string') return c
-      if (c.text) return c.text
-      if (c.content) return c.content
-      if (c.result) return c.result
-      return JSON.stringify(c)
-    }).join('')
+    text = msg.content
+      .map((c: any) => {
+        if (typeof c === 'string') return c
+        if (c.text) return c.text
+        if (c.content) return c.content
+        if (c.result) return c.result
+        return JSON.stringify(c)
+      })
+      .join('')
   }
   // Also count tool calls / tool results
   if (msg.tool_calls) {
@@ -95,7 +97,9 @@ function trimMessagesForContext(messages: any[], maxContextTokens: number): any[
   // Only trim if we're over 75% of context budget
   if (totalTokens < maxContextTokens * 0.75) return messages
 
-  console.log(`[Agent] Context trimming: ${totalTokens} estimated tokens exceeds 75% of ${maxContextTokens}`)
+  console.log(
+    `[Agent] Context trimming: ${totalTokens} estimated tokens exceeds 75% of ${maxContextTokens}`
+  )
 
   const trimmed = [...messages]
   // Never touch first message (system) or last 4 messages (recent context)
@@ -112,21 +116,33 @@ function trimMessagesForContext(messages: any[], maxContextTokens: number): any[
 
     // Trim tool result messages
     if (msg.role === 'tool') {
-      const summary = typeof msg.content === 'string'
-        ? msg.content.slice(0, 200) + (msg.content.length > 200 ? '...[trimmed]' : '')
-        : '[tool result trimmed for context]'
+      const summary =
+        typeof msg.content === 'string'
+          ? msg.content.slice(0, 200) + (msg.content.length > 200 ? '...[trimmed]' : '')
+          : '[tool result trimmed for context]'
       trimmed[i] = { ...msg, content: summary }
     }
     // Trim assistant messages with large content
-    else if (msg.role === 'assistant' && typeof msg.content === 'string' && msg.content.length > 2000) {
-      trimmed[i] = { ...msg, content: msg.content.slice(0, 1000) + '\n...[earlier response trimmed for context]' }
+    else if (
+      msg.role === 'assistant' &&
+      typeof msg.content === 'string' &&
+      msg.content.length > 2000
+    ) {
+      trimmed[i] = {
+        ...msg,
+        content: msg.content.slice(0, 1000) + '\n...[earlier response trimmed for context]'
+      }
     }
     // Trim Anthropic-style tool_result blocks
     else if (msg.role === 'user' && Array.isArray(msg.content)) {
       trimmed[i] = {
         ...msg,
         content: msg.content.map((block: any) => {
-          if (block.type === 'tool_result' && typeof block.content === 'string' && block.content.length > 500) {
+          if (
+            block.type === 'tool_result' &&
+            typeof block.content === 'string' &&
+            block.content.length > 500
+          ) {
             return { ...block, content: block.content.slice(0, 200) + '...[trimmed]' }
           }
           return block
@@ -166,7 +182,9 @@ export function registerAgentHandlers() {
   })
 
   ipcMain.handle('agent:send', async (event, request: AgentRequest) => {
-    console.log(`[Agent:Send] model="${request.modelId}" provider="${request.providerId}" project="${request.projectRoot}"`)
+    console.log(
+      `[Agent:Send] model="${request.modelId}" provider="${request.providerId}" project="${request.projectRoot}"`
+    )
 
     const state = { cancelled: false }
     ActiveAgentRequests.set(request.requestId, state)
@@ -238,9 +256,13 @@ export function registerAgentHandlers() {
           }
 
           // Context overflow — try aggressive trimming and retry once
-          if ((errStatus === 400 || errStatus === 413) &&
-            (errMsg.includes('context length') || errMsg.includes('too many tokens') || errMsg.includes('max_tokens')) &&
-            consecutiveErrors <= 2) {
+          if (
+            (errStatus === 400 || errStatus === 413) &&
+            (errMsg.includes('context length') ||
+              errMsg.includes('too many tokens') ||
+              errMsg.includes('max_tokens')) &&
+            consecutiveErrors <= 2
+          ) {
             console.log('[Agent] Context overflow detected, aggressively trimming...')
             // Force aggressive trim by halving the budget
             messages = trimMessagesForContext(messages, Math.floor(maxContextTokens * 0.5))
@@ -318,7 +340,9 @@ export function registerAgentHandlers() {
         for (const tc of result.toolCalls) {
           if (state.cancelled) break
 
-          console.log(`[Agent] Tool call #${turn}: ${tc.name}(${JSON.stringify(tc.arguments).slice(0, 200)})`)
+          console.log(
+            `[Agent] Tool call #${turn}: ${tc.name}(${JSON.stringify(tc.arguments).slice(0, 200)})`
+          )
 
           // Approval gate for destructive tools
           if (TOOLS_REQUIRING_APPROVAL.has(tc.name)) {
@@ -352,9 +376,10 @@ export function registerAgentHandlers() {
             const approved = await waitForApproval(approvalId)
 
             if (!approved) {
-              const rejectMsg = tc.name === 'execute_command'
-                ? `User rejected executing "${(tc.arguments as any).command}". Do not retry.`
-                : `User rejected file write to "${(tc.arguments as any).path}". Do not retry.`
+              const rejectMsg =
+                tc.name === 'execute_command'
+                  ? `User rejected executing "${(tc.arguments as any).command}". Do not retry.`
+                  : `User rejected file write to "${(tc.arguments as any).path}". Do not retry.`
               toolResults.push({
                 toolCallId: tc.id,
                 name: tc.name,

@@ -95,9 +95,9 @@ export default function SettingsDrawer({
               <div
                 className="relative"
                 onMouseEnter={(e) => {
-                  const rect = e.currentTarget.getBoundingClientRect();
-                  setTooltipPos({ x: rect.right, y: rect.top });
-                  setShowTooltip(true);
+                  const rect = e.currentTarget.getBoundingClientRect()
+                  setTooltipPos({ x: rect.right, y: rect.top })
+                  setShowTooltip(true)
                 }}
                 onMouseLeave={() => setShowTooltip(false)}
               >
@@ -120,20 +120,16 @@ export default function SettingsDrawer({
             </div>
           </div>
 
-
-
           {/* Memory Toggle */}
           <div className="flex items-center justify-between">
             <div>
-              <label className="text-xs font-medium text-text-secondary">
-                Inject memories
-              </label>
-              <p className="text-[10px] text-gray-400 mt-0.5">
-                Auto-extracted after 5+ messages
-              </p>
+              <label className="text-xs font-medium text-text-secondary">Inject memories</label>
+              <p className="text-[10px] text-gray-400 mt-0.5">Auto-extracted after 5+ messages</p>
             </div>
             <button
-              onClick={() => setLocal({ ...local, memoryEnabled: !(local.memoryEnabled !== false) })}
+              onClick={() =>
+                setLocal({ ...local, memoryEnabled: !(local.memoryEnabled !== false) })
+              }
               className={`w-9 h-5 rounded-full transition-colors relative ${local.memoryEnabled !== false ? 'bg-primary' : 'bg-gray-300 dark:bg-gray-600'}`}
             >
               <span
@@ -144,58 +140,69 @@ export default function SettingsDrawer({
         </div>
 
         {/* Temperature Tooltip Portal */}
-        {showTooltip && createPortal(
-          <div
-            className="fixed z-[9999]"
-            style={{ top: tooltipPos.y - 8, right: window.innerWidth - tooltipPos.x + 4 }}
-            onMouseEnter={() => setShowTooltip(true)}
-            onMouseLeave={() => setShowTooltip(false)}
-          >
-            <div className="-translate-y-full">
-              <div className="bg-[#2a2a2e] rounded-xl shadow-2xl border border-white/10 overflow-hidden w-64">
-                <table className="w-full text-[11px]">
-                  <thead>
-                    <tr className="border-b border-white/10">
-                      <th className="text-left text-white font-semibold px-3 py-2">Value</th>
-                      <th className="text-left text-white font-semibold px-3 py-2">Behavior</th>
-                      <th className="text-left text-white font-semibold px-3 py-2">Best For</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr className="border-b border-white/5">
-                      <td className="px-3 py-1.5 font-bold" style={{ color: '#4ade80' }}>0.0</td>
-                      <td className="px-3 py-1.5 text-gray-300">Deterministic</td>
-                      <td className="px-3 py-1.5 text-gray-300">Code, factual Q&A</td>
-                    </tr>
-                    <tr className="border-b border-white/5">
-                      <td className="px-3 py-1.5 font-bold" style={{ color: '#facc15' }}>0.3–0.5</td>
-                      <td className="px-3 py-1.5 text-gray-300">Focused</td>
-                      <td className="px-3 py-1.5 text-gray-300">Technical writing</td>
-                    </tr>
-                    <tr className="border-b border-white/5">
-                      <td className="px-3 py-1.5 font-bold" style={{ color: '#facc15' }}>0.7</td>
-                      <td className="px-3 py-1.5 text-gray-300">Balanced</td>
-                      <td className="px-3 py-1.5 text-gray-300">General chat</td>
-                    </tr>
-                    <tr className="border-b border-white/5">
-                      <td className="px-3 py-1.5 font-bold" style={{ color: '#d97706' }}>1.0–1.5</td>
-                      <td className="px-3 py-1.5 text-gray-300">Creative</td>
-                      <td className="px-3 py-1.5 text-gray-300">Brainstorming</td>
-                    </tr>
-                    <tr>
-                      <td className="px-3 py-1.5 font-bold" style={{ color: '#ef4444' }}>2.0</td>
-                      <td className="px-3 py-1.5 text-gray-300">Random</td>
-                      <td className="px-3 py-1.5 text-gray-300">Experimental only</td>
-                    </tr>
-                  </tbody>
-                </table>
+        {showTooltip &&
+          createPortal(
+            <div
+              className="fixed z-[9999]"
+              style={{ top: tooltipPos.y - 8, right: window.innerWidth - tooltipPos.x + 4 }}
+              onMouseEnter={() => setShowTooltip(true)}
+              onMouseLeave={() => setShowTooltip(false)}
+            >
+              <div className="-translate-y-full">
+                <div className="bg-[#2a2a2e] rounded-xl shadow-2xl border border-white/10 overflow-hidden w-64">
+                  <table className="w-full text-[11px]">
+                    <thead>
+                      <tr className="border-b border-white/10">
+                        <th className="text-left text-white font-semibold px-3 py-2">Value</th>
+                        <th className="text-left text-white font-semibold px-3 py-2">Behavior</th>
+                        <th className="text-left text-white font-semibold px-3 py-2">Best For</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr className="border-b border-white/5">
+                        <td className="px-3 py-1.5 font-bold" style={{ color: '#4ade80' }}>
+                          0.0
+                        </td>
+                        <td className="px-3 py-1.5 text-gray-300">Deterministic</td>
+                        <td className="px-3 py-1.5 text-gray-300">Code, factual Q&A</td>
+                      </tr>
+                      <tr className="border-b border-white/5">
+                        <td className="px-3 py-1.5 font-bold" style={{ color: '#facc15' }}>
+                          0.3–0.5
+                        </td>
+                        <td className="px-3 py-1.5 text-gray-300">Focused</td>
+                        <td className="px-3 py-1.5 text-gray-300">Technical writing</td>
+                      </tr>
+                      <tr className="border-b border-white/5">
+                        <td className="px-3 py-1.5 font-bold" style={{ color: '#facc15' }}>
+                          0.7
+                        </td>
+                        <td className="px-3 py-1.5 text-gray-300">Balanced</td>
+                        <td className="px-3 py-1.5 text-gray-300">General chat</td>
+                      </tr>
+                      <tr className="border-b border-white/5">
+                        <td className="px-3 py-1.5 font-bold" style={{ color: '#d97706' }}>
+                          1.0–1.5
+                        </td>
+                        <td className="px-3 py-1.5 text-gray-300">Creative</td>
+                        <td className="px-3 py-1.5 text-gray-300">Brainstorming</td>
+                      </tr>
+                      <tr>
+                        <td className="px-3 py-1.5 font-bold" style={{ color: '#ef4444' }}>
+                          2.0
+                        </td>
+                        <td className="px-3 py-1.5 text-gray-300">Random</td>
+                        <td className="px-3 py-1.5 text-gray-300">Experimental only</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+                {/* Arrow */}
+                <div className="absolute right-[11px] -bottom-1.5 w-3 h-3 bg-[#2a2a2e] rotate-45 border-r border-b border-white/10" />
               </div>
-              {/* Arrow */}
-              <div className="absolute right-[11px] -bottom-1.5 w-3 h-3 bg-[#2a2a2e] rotate-45 border-r border-b border-white/10" />
-            </div>
-          </div>,
-          document.body
-        )}
+            </div>,
+            document.body
+          )}
 
         <div className="p-4 border-t border-border shrink-0 z-10 bg-surface">
           <button

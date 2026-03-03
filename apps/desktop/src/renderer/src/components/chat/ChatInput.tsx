@@ -12,6 +12,7 @@ interface ChatInputProps {
   selectedProviderId: string | null
   connectedProviders: string[]
   connectedModels: string[]
+  modelsByProvider: Record<string, string[]>
   onModelChange: (modelId: string, providerId: string) => void
   agentMode?: boolean
 }
@@ -25,6 +26,7 @@ export default function ChatInput({
   selectedProviderId,
   connectedProviders,
   connectedModels,
+  modelsByProvider,
   onModelChange,
   agentMode
 }: ChatInputProps) {
@@ -112,6 +114,7 @@ export default function ChatInput({
                 selectedProviderId={selectedProviderId}
                 connectedProviders={connectedProviders}
                 connectedModels={connectedModels}
+                modelsByProvider={modelsByProvider}
                 onSelect={onModelChange}
                 agentMode={agentMode}
               />

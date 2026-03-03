@@ -2,6 +2,7 @@ import { useNavigate } from 'react-router-dom'
 import { CheckCircle2, XCircle, ArrowRight } from 'lucide-react'
 import { useAppStore } from '../store'
 import { cn } from '@dexterai/shared-utils'
+import SecurityBanner from '../components/common/SecurityBanner'
 
 // Import logos
 import openaiLogo from '../assets/logos/openai.jpeg'
@@ -13,11 +14,31 @@ import githubLogo from '../assets/logos/github.png'
 
 const PROVIDER_DATA = [
   { id: 'openai', label: 'OpenAI', logo: openaiLogo, description: 'GPT-4o, GPT-4, GPT-3.5 Turbo' },
-  { id: 'anthropic', label: 'Anthropic', logo: anthropicLogo, description: 'Claude 3.5 Sonnet, Opus, Haiku' },
+  {
+    id: 'anthropic',
+    label: 'Anthropic',
+    logo: anthropicLogo,
+    description: 'Claude 3.5 Sonnet, Opus, Haiku'
+  },
   { id: 'google', label: 'Google Gemini', logo: googleLogo, description: 'Gemini 1.5 Pro, Flash' },
-  { id: 'nvidia_nim', label: 'NVIDIA NIM', logo: nvidiaLogo, description: 'Llama 3, Mixtral, Gemma via NVIDIA' },
-  { id: 'deepgram', label: 'Deepgram', logo: deepgramLogo, description: 'Speech-to-Text & Text-to-Speech' },
-  { id: 'github', label: 'GitHub Models', logo: githubLogo, description: 'GPT-4.1, GPT-5, o3, DeepSeek, Llama 4, Grok 3 via GitHub' }
+  {
+    id: 'nvidia_nim',
+    label: 'NVIDIA NIM',
+    logo: nvidiaLogo,
+    description: 'Llama 3, Mixtral, Gemma via NVIDIA'
+  },
+  {
+    id: 'deepgram',
+    label: 'Deepgram',
+    logo: deepgramLogo,
+    description: 'Speech-to-Text & Text-to-Speech'
+  },
+  {
+    id: 'github',
+    label: 'GitHub Models',
+    logo: githubLogo,
+    description: 'GPT-4.1, GPT-5, o3, DeepSeek, Llama 4, Grok 3 via GitHub'
+  }
 ]
 
 export default function ProvidersScreen() {
@@ -31,7 +52,8 @@ export default function ProvidersScreen() {
         <p className="text-sm text-text-muted mt-1">Manage your connections and API keys</p>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-6">
+      <div className="flex-1 overflow-y-auto p-6 space-y-8">
+        <SecurityBanner className="max-w-6xl mx-auto" />
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
           {PROVIDER_DATA.map((provider) => {
             const isConnected = connectedProviders.includes(provider.id)
@@ -41,10 +63,10 @@ export default function ProvidersScreen() {
                 key={provider.id}
                 onClick={() => navigate(`/provider/${provider.id}`)}
                 className={cn(
-                  "group relative flex flex-col items-center text-center p-8 rounded-2xl transition-all duration-300 border-2",
+                  'group relative flex flex-col items-center text-center p-8 rounded-2xl transition-all duration-300 border-2',
                   isConnected
-                    ? "bg-surface border-primary/20 hover:border-primary/40 shadow-lg shadow-primary/5"
-                    : "bg-surface/50 border-border hover:border-border-strong hover:bg-surface shadow-sm"
+                    ? 'bg-surface border-primary/20 hover:border-primary/40 shadow-lg shadow-primary/5'
+                    : 'bg-surface/50 border-border hover:border-border-strong hover:bg-surface shadow-sm'
                 )}
               >
                 {/* Status Indicator */}

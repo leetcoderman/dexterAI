@@ -50,14 +50,15 @@ function getSession(requestId: string): StreamingSession | undefined {
 function syncToStore(session: StreamingSession) {
   const store = useAppStore.getState()
   const elapsed = (Date.now() - session.startTime) / 1000
-  const tokensPerSec = elapsed > 0 ? (session.accumulatedText.length / 4) / elapsed : 0
+  const tokensPerSec = elapsed > 0 ? session.accumulatedText.length / 4 / elapsed : 0
   const hasFirstChunk = session.firstChunkTime > 0
   const waitingTime = Date.now() - session.startTime
   const isWaiting = !hasFirstChunk && waitingTime > 800
-  const isSlow = hasFirstChunk && (waitingTime / (session.accumulatedText.length || 1) > 0.5)
-  const isThinking = session.accumulatedThought.length > 0
-    && session.textBuffer.length === 0
-    && session.accumulatedText.length === 0
+  const isSlow = hasFirstChunk && waitingTime / (session.accumulatedText.length || 1) > 0.5
+  const isThinking =
+    session.accumulatedThought.length > 0 &&
+    session.textBuffer.length === 0 &&
+    session.accumulatedText.length === 0
 
   store.updateStreamSession(session.conversationId, {
     conversationId: session.conversationId,
@@ -85,10 +86,7 @@ function removeSession(session: StreamingSession) {
   useAppStore.getState().removeStreamSession(session.conversationId)
 }
 
-function persistFinalMessage(
-  session: StreamingSession,
-  metrics?: EvaluationMetrics
-) {
+function persistFinalMessage(session: StreamingSession, metrics?: EvaluationMetrics) {
   const finalText = session.accumulatedText
   const finalThought = session.accumulatedThought
 
@@ -132,7 +130,7 @@ function drainTick() {
     const hasFirstChunk = session.firstChunkTime > 0
     const waitingTime = now - session.startTime
     const isWaiting = !hasFirstChunk && waitingTime > 800
-    const isSlow = hasFirstChunk && (waitingTime / (session.accumulatedText.length || 1) > 0.5)
+    const isSlow = hasFirstChunk && waitingTime / (session.accumulatedText.length || 1) > 0.5
 
     if (textToDrain || thoughtToDrain || isWaiting || isSlow) {
       session.textBuffer = session.textBuffer.slice(textToDrain.length)
@@ -357,28 +355,34 @@ export function initStreamingManager(): () => void {
     session.pendingApproval = null
     session.isToolProcessing = false
 
-    session.toolSteps = [...session.toolSteps, {
-      toolName: data.toolCall.name,
-      args: data.toolCall.arguments,
-      result: data.result.result,
-      isError: data.result.isError
-    }]
+    session.toolSteps = [
+      ...session.toolSteps,
+      {
+        toolName: data.toolCall.name,
+        args: data.toolCall.arguments,
+        result: data.result.result,
+        isError: data.result.isError
+      }
+    ]
 
     if (session.isViewAttached) {
       syncToStore(session)
     }
   })
 
-  const unsubApproval = window.dexterai.on('agent:approval-required', (data: AgentApprovalRequest) => {
-    const session = getSession(data.requestId)
-    if (!session) return
+  const unsubApproval = window.dexterai.on(
+    'agent:approval-required',
+    (data: AgentApprovalRequest) => {
+      const session = getSession(data.requestId)
+      if (!session) return
 
-    session.pendingApproval = data
+      session.pendingApproval = data
 
-    if (session.isViewAttached) {
-      syncToStore(session)
+      if (session.isViewAttached) {
+        syncToStore(session)
+      }
     }
-  })
+  )
 
   return () => {
     if (drainInterval) clearInterval(drainInterval)

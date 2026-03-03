@@ -129,7 +129,10 @@ export default function EditorTabs({
             >
               <span className="truncate max-w-[120px]">{file.name}</span>
               {isDirty && (
-                <span className="w-2 h-2 rounded-full bg-warning shrink-0" title="Unsaved changes" />
+                <span
+                  className="w-2 h-2 rounded-full bg-warning shrink-0"
+                  title="Unsaved changes"
+                />
               )}
               <span
                 onClick={(e) => {
@@ -153,7 +156,10 @@ export default function EditorTabs({
           style={{ left: contextMenu.x, top: contextMenu.y }}
         >
           <button
-            onClick={() => { confirmClose(contextMenu.tabIndex); setContextMenu(null) }}
+            onClick={() => {
+              confirmClose(contextMenu.tabIndex)
+              setContextMenu(null)
+            }}
             className="w-full text-left px-3 py-1.5 text-[12px] text-text hover:bg-elevated transition-colors"
           >
             Close

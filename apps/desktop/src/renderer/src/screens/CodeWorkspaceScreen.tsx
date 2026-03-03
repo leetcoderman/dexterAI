@@ -1,6 +1,11 @@
 import { useState, useEffect, useCallback } from 'react'
-import { FolderOpen, ChevronLeft, ChevronRight } from 'lucide-react'
-import { Group as PanelGroup, Panel, Separator as PanelResizeHandle, useDefaultLayout } from 'react-resizable-panels'
+import { FolderOpen, ChevronLeft, ChevronRight, TriangleAlert } from 'lucide-react'
+import {
+  Group as PanelGroup,
+  Panel,
+  Separator as PanelResizeHandle,
+  useDefaultLayout
+} from 'react-resizable-panels'
 import { useAppStore } from '../store'
 import FileExplorer, { detectLanguage } from '../components/code/FileExplorer'
 import EditorTabs from '../components/code/EditorTabs'
@@ -55,18 +60,21 @@ export default function CodeWorkspaceScreen() {
     if (!sidebarCollapsed) {
       toggleSidebar()
     }
-    // No cleanup: we want it collapsed while here. 
+    // No cleanup: we want it collapsed while here.
     // Usually user would expand it manually if they really wanted.
   }, [])
 
-  const loadTree = useCallback(async (root: string) => {
-    try {
-      const tree = await window.dexterai.fs.readDir({ rootPath: root })
-      setFileTree(tree)
-    } catch (e) {
-      console.error('Failed to load file tree:', e)
-    }
-  }, [setFileTree])
+  const loadTree = useCallback(
+    async (root: string) => {
+      try {
+        const tree = await window.dexterai.fs.readDir({ rootPath: root })
+        setFileTree(tree)
+      } catch (e) {
+        console.error('Failed to load file tree:', e)
+      }
+    },
+    [setFileTree]
+  )
 
   const handleOpenFolder = useCallback(async () => {
     const result = await window.dexterai.fs.openFolder()
@@ -80,44 +88,49 @@ export default function CodeWorkspaceScreen() {
     await loadTree(result.rootPath)
   }, [setProjectRoot, setOpenFiles, setActiveFileIndex, setCodeConversationId, loadTree])
 
+  const handleFileSelect = useCallback(
+    async (filePath: string, fileName: string) => {
+      if (!projectRoot) return
 
-  const handleFileSelect = useCallback(async (filePath: string, fileName: string) => {
-    if (!projectRoot) return
+      // Check if already open
+      const existing = openFiles.findIndex((f) => f.path === filePath)
+      if (existing !== -1) {
+        setActiveFileIndex(existing)
+        return
+      }
 
-    // Check if already open
-    const existing = openFiles.findIndex((f) => f.path === filePath)
-    if (existing !== -1) {
-      setActiveFileIndex(existing)
-      return
-    }
+      // Read from disk
+      const result = await window.dexterai.fs.readFile({ filePath, rootPath: projectRoot })
+      if ('error' in result) {
+        console.error('Failed to read file:', result.error)
+        return
+      }
 
-    // Read from disk
-    const result = await window.dexterai.fs.readFile({ filePath, rootPath: projectRoot })
-    if ('error' in result) {
-      console.error('Failed to read file:', result.error)
-      return
-    }
+      const language = detectLanguage(fileName)
+      openFile(filePath, fileName, result.content, language)
+    },
+    [projectRoot, openFiles, setActiveFileIndex, openFile]
+  )
 
-    const language = detectLanguage(fileName)
-    openFile(filePath, fileName, result.content, language)
-  }, [projectRoot, openFiles, setActiveFileIndex, openFile])
+  const handleSave = useCallback(
+    async (index: number) => {
+      if (!projectRoot) return
+      const file = openFiles[index]
+      if (!file) return
 
-  const handleSave = useCallback(async (index: number) => {
-    if (!projectRoot) return
-    const file = openFiles[index]
-    if (!file) return
-
-    const result = await window.dexterai.fs.writeFile({
-      filePath: file.path,
-      rootPath: projectRoot,
-      content: file.content
-    })
-    if (result.success) {
-      markFileSaved(index)
-    } else {
-      console.error('Failed to save file:', result.error)
-    }
-  }, [projectRoot, openFiles, markFileSaved])
+      const result = await window.dexterai.fs.writeFile({
+        filePath: file.path,
+        rootPath: projectRoot,
+        content: file.content
+      })
+      if (result.success) {
+        markFileSaved(index)
+      } else {
+        console.error('Failed to save file:', result.error)
+      }
+    },
+    [projectRoot, openFiles, markFileSaved]
+  )
 
   const handleRefresh = useCallback(() => {
     if (projectRoot) loadTree(projectRoot)
@@ -146,7 +159,8 @@ export default function CodeWorkspaceScreen() {
           <div>
             <h2 className="text-xl font-bold text-text mb-2">Open a Project</h2>
             <p className="text-sm text-text-secondary leading-relaxed">
-              Select a folder to open a code workspace with a file explorer, editor, and AI chat assistant.
+              Select a folder to open a code workspace with a file explorer, editor, and AI chat
+              assistant.
             </p>
           </div>
           <button
@@ -163,6 +177,13 @@ export default function CodeWorkspaceScreen() {
   // 3-panel workspace
   return (
     <div className="flex flex-col h-full bg-background no-select overflow-hidden">
+      <div className="bg-amber-500/10 border-b border-amber-500/20 px-4 py-2 flex items-center justify-center gap-2 shrink-0">
+        <TriangleAlert className="w-4 h-4 text-amber-600 dark:text-amber-500" />
+        <span className="text-xs font-bold text-amber-700 dark:text-amber-400">
+          EXPERIMENTAL FEATURE: The Code workspace is currently under development, is highly
+          untested and may showcase various errors.
+        </span>
+      </div>
       <PanelGroup
         orientation="horizontal"
         className="flex-1"
@@ -170,12 +191,7 @@ export default function CodeWorkspaceScreen() {
         onLayoutChanged={onLayoutChanged}
       >
         {/* File Explorer / Search */}
-        <Panel
-          defaultSize={360}
-          minSize={25}
-          maxSize={365}
-          className="flex flex-col"
-        >
+        <Panel defaultSize={360} minSize={25} maxSize={365} className="flex flex-col">
           {showSearch ? (
             <SearchPanel
               rootPath={projectRoot}
@@ -230,12 +246,13 @@ export default function CodeWorkspaceScreen() {
         </PanelResizeHandle>
 
         {/* Chat */}
-        <Panel
-          defaultSize={25}
-          minSize={15}
-          className="flex flex-col"
-        >
-          <CodeChat rootPath={projectRoot} activeFile={activeFile} openFiles={openFiles} fileTree={fileTree} />
+        <Panel defaultSize={25} minSize={15} className="flex flex-col">
+          <CodeChat
+            rootPath={projectRoot}
+            activeFile={activeFile}
+            openFiles={openFiles}
+            fileTree={fileTree}
+          />
         </Panel>
       </PanelGroup>
     </div>

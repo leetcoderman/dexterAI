@@ -29,7 +29,16 @@ module.exports = {
         'input-border': 'var(--color-input-border)'
       },
       fontFamily: {
-        sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'Helvetica', 'Arial', 'sans-serif'],
+        sans: [
+          'Inter',
+          '-apple-system',
+          'BlinkMacSystemFont',
+          'Segoe UI',
+          'Roboto',
+          'Helvetica',
+          'Arial',
+          'sans-serif'
+        ],
         mono: ['JetBrains Mono', 'SF Mono', 'Menlo', 'Consolas', 'monospace']
       },
       borderRadius: {
@@ -46,9 +55,9 @@ module.exports = {
         'fade-in': 'fadeIn 0.2s ease-out',
         'fade-in-up': 'fadeInUp 0.3s ease-out',
         'slide-up': 'slideUp 0.3s ease-out',
-        'breathing': 'breathing 1.2s ease-in-out infinite',
-        'skeleton': 'skeleton 1.5s ease-in-out infinite',
-        'shimmer': 'shimmer 2s ease-in-out infinite',
+        breathing: 'breathing 1.2s ease-in-out infinite',
+        skeleton: 'skeleton 1.5s ease-in-out infinite',
+        shimmer: 'shimmer 2s ease-in-out infinite',
         'pulse-ring': 'pulseRing 1.5s ease-out infinite',
         'dot-bounce': 'dotBounce 1.4s ease-in-out infinite'
       },
@@ -89,7 +98,5 @@ module.exports = {
       }
     }
   },
-  plugins: [
-    require('@tailwindcss/typography')
-  ]
+  plugins: [require('@tailwindcss/typography')]
 }
