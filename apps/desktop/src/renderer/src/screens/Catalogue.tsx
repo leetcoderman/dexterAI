@@ -111,14 +111,14 @@ export default function Catalogue() {
                 </span>
                 <div
                   className={cn(
-                    'w-10 h-6 rounded-full transition-colors relative cursor-pointer',
-                    showReadyOnly ? 'bg-[#5865F2]' : 'bg-black/30 border border-border-subtle'
+                    'w-11 h-6 rounded-full transition-colors relative cursor-pointer shrink-0',
+                    showReadyOnly ? 'bg-primary' : 'bg-black/30 border border-border-subtle'
                   )}
                 >
                   <div
                     className={cn(
-                      'absolute top-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-white shadow-sm transition-transform duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)]',
-                      showReadyOnly ? 'translate-x-[20px]' : 'translate-x-[3px]'
+                      'absolute top-1 left-1 w-4 h-4 rounded-full bg-white shadow-sm transition-transform duration-200 ease-in-out',
+                      showReadyOnly ? 'translate-x-5' : 'translate-x-0'
                     )}
                   />
                 </div>

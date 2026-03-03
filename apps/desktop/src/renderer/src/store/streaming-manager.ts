@@ -102,7 +102,7 @@ function persistFinalMessage(session: StreamingSession, metrics?: EvaluationMetr
       resolvedModel: metrics.resolvedModel,
       thought: finalThought
     }
-    window.dexterai.messages.update(session.assistantMsgId, {
+    window.dexterai?.messages?.update(session.assistantMsgId, {
       content: finalText,
       token_count: metrics.completionTokens || 0,
       metadata_json: JSON.stringify(metadata)
@@ -110,7 +110,7 @@ function persistFinalMessage(session: StreamingSession, metrics?: EvaluationMetr
   } else {
     // Error or cancel — persist partial content
     if (finalText) {
-      window.dexterai.messages.update(session.assistantMsgId, {
+      window.dexterai?.messages?.update(session.assistantMsgId, {
         content: finalText
       })
     }
@@ -267,13 +267,20 @@ export function cancelSession(conversationId: string) {
 // --- Initialization (called once from App.tsx) ---
 
 export function initStreamingManager(): () => void {
-  if (initialized) return () => {}
+  if (initialized) return () => { }
   initialized = true
 
   // Start drain loop
   drainInterval = setInterval(drainTick, 25)
 
   // --- IPC listeners ---
+  if (!window.dexterai) {
+    console.warn('window.dexterai not found. Streaming manager listeners skipped.')
+    return () => {
+      if (drainInterval) clearInterval(drainInterval)
+      initialized = false
+    }
+  }
 
   const unsubChunk = window.dexterai.on('chat:chunk', (data: StreamChunk) => {
     const session = getSession(data.requestId)
@@ -386,12 +393,12 @@ export function initStreamingManager(): () => void {
 
   return () => {
     if (drainInterval) clearInterval(drainInterval)
-    unsubChunk()
-    unsubDone()
-    unsubError()
-    unsubTitle()
-    unsubToolResult()
-    unsubApproval()
+    unsubChunk?.()
+    unsubDone?.()
+    unsubError?.()
+    unsubTitle?.()
+    unsubToolResult?.()
+    unsubApproval?.()
     initialized = false
   }
 }

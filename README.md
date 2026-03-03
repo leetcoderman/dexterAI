@@ -17,7 +17,7 @@ Connect and chat with all major AI providers in one place.
 - **Rich Media**: Built-in Speech-to-Text and Text-to-Speech via Deepgram
 - **Model Catalogue**: Browse and compare 195 models across all providers
 
-### 🤖 Agentic Workspace
+### 🤖 Agentic Workspace (Experimental)
 Transform chat into a powerful autonomous workbench.
 - **Tool Use**: AI-driven filesystem operations and terminal commands
 - **Security Gates**: Explicit user approval required for every destructive OS-level action
@@ -29,7 +29,7 @@ Your data, your machine — always.
 - **Native Security**: API keys reside strictly in your OS Keychain (never on disk or in the DB)
 - **No Telemetry**: Zero data collection or analytics
 
-### 🖥 Professional Developer UX
+### 🖥 Professional Developer UX (Experimental)
 - **Integrated Terminal**: Real-time shell access within the app
 - **40fps Streaming**: Smooth, buffer-drained token rendering
 - **Persistent Memory**: AI that learns your preferences and project context over time

@@ -130,6 +130,7 @@ export const useAppStore = create<AppState>()(
           connectedProviders: state.connectedProviders.filter((id) => id !== providerId)
         })),
       syncConnectedProviders: async () => {
+        if (!window.dexterai) return
         try {
           const result = await window.dexterai.credentials.listConnected()
           set({
@@ -147,6 +148,7 @@ export const useAppStore = create<AppState>()(
       setActiveConversation: (id) => set({ activeConversationId: id }),
       conversations: [],
       loadConversations: async () => {
+        if (!window.dexterai) return
         try {
           const conversations = await window.dexterai.conversations.list()
           set({ conversations })
@@ -158,6 +160,7 @@ export const useAppStore = create<AppState>()(
       // v2: Model selection
       allModels: [],
       loadAllModels: async () => {
+        if (!window.dexterai) return
         try {
           const allModels = await window.dexterai.registry.getModels()
           set({ allModels })
