@@ -1,3 +1,6 @@
+<img width="3420" height="1788" alt="image" src="https://github.com/user-attachments/assets/61fb38c1-f5d9-445f-8c13-5b359da3de25" />
+
+
 # dexterAI v3.2 🚀
 
 [![License: ISC](https://img.shields.io/badge/License-ISC-blue.svg)](./LICENSE)
